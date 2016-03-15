@@ -5,7 +5,7 @@ example repo to provision of a machine to host the discourse platform
 ## Requirements
 
 - vagrant (tested with *1.8.1*)
-
+- Ansible (tested with *1.9.3*)
 
 
 
@@ -24,3 +24,13 @@ Create the virtual machine with vagrant:
 ```
 vagrant up
 ```
+
+---
+
+Install the Ansible roles with `ansible-galaxy`:
+
+```
+sudo ansible-galaxy install -r requirements.yml  --force
+```
+
+

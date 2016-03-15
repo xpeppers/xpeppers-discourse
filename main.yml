@@ -1,0 +1,21 @@
+---
+- hosts: all
+  pre_tasks:
+  - name: create a new user
+    sudo: yes
+    user: name=web
+          state=present
+          group=sudo
+          groups="sudo"
+          password="any"
+  - name: update apt cache
+    sudo: yes
+    apt: update_cache=yes cache_valid_time=3600
+  - name: install apt packages
+    sudo: yes
+    apt: name={{item}} state=present
+    with_items:
+       - git
+  roles:
+    - role: angstwad.docker_ubuntu
+      sudo: yes
