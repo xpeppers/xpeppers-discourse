@@ -33,4 +33,18 @@ Install the Ansible roles with `ansible-galaxy`:
 sudo ansible-galaxy install -r requirements.yml  --force
 ```
 
+---
 
+Provision the vagrant machine:
+
+```
+ansible-playbook -i inventory/vagrant_hosts  main.yml --private-key ~/.vagrant.d/insecure_private_key -u vagrant -vvvv
+```
+
+
+
+
+
+# Notes
+
+Ansibles `gather_facts` cannot be disabled.
