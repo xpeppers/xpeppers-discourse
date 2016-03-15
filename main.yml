@@ -16,6 +16,9 @@
     apt: name={{item}} state=present
     with_items:
        - git
+  post_tasks:
+    - synchronize: src=discourse-source dest=/var/discourse
+      sudo: yes
   roles:
     - role: angstwad.docker_ubuntu
       sudo: yes

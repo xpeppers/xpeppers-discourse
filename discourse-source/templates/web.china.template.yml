@@ -1,0 +1,10 @@
+hooks:
+  before_web:
+    - exec:
+       cmd:
+         - gem sources --add https://gems.ruby-china.org/ --remove https://rubygems.org/
+
+  before_bundle_exec:
+    - exec:
+       cmd:
+         - su discourse -c 'bundle config mirror.https://rubygems.org https://gems.ruby-china.org/'

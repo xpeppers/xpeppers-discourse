@@ -1,0 +1,677 @@
+#!/bin/bash
+
+command=$1
+config=$2
+opt=$3
+
+# Docker doesn't like uppercase characters, spaces or special characters, catch it now before we build everything out and then find out
+re='[A-Z/ !@#$%^&*()+~`=]'
+if [[ $config =~ $re ]];
+  then
+    echo
+    echo "ERROR: Config name must not contain upper case characters, spaces or special characters. Correct config name and rerun $0."
+    echo
+    exit 1
+fi
+
+cd "$(dirname "$0")"
+
+docker_min_version='1.6.0'
+docker_rec_version='1.6.0'
+
+config_file=containers/"$config".yml
+cidbootstrap=cids/"$config"_bootstrap.cid
+local_discourse=local_discourse
+image=discourse/discourse:1.0.17
+docker_path=`which docker.io || which docker`
+
+
+if [ "${SUPERVISED}" = "true" ]; then
+  restart_policy="--restart=no"
+  attach_on_start="-a"
+  attach_on_run="-a stdout -a stderr"
+else
+  attach_on_run="-d"
+fi
+
+if [ -n "$DOCKER_HOST" ]; then
+  docker_ip=`sed -e 's/^tcp:\/\/\(.*\):.*$/\1/' <<< "$DOCKER_HOST"`
+elif [ -x "$(which ip 2>/dev/null)" ]; then
+  docker_ip=`ip addr show docker0 | \
+                  grep 'inet ' | \
+                  awk '{ split($2,a,"/"); print a[1] }';`
+else
+  docker_ip=`ifconfig | \
+                  grep -B1 "inet addr" | \
+                  awk '{ if ( $1 == "inet" ) { print $2 } else if ( $2 == "Link" ) { printf "%s:" ,$1 } }' | \
+                  grep docker0 | \
+                  awk -F: '{ print $3 }';`
+fi
+
+
+usage () {
+  echo "Usage: launcher COMMAND CONFIG [--skip-prereqs]"
+  echo "Commands:"
+  echo "    start:      Start/initialize a container"
+  echo "    stop:       Stop a running container"
+  echo "    restart:    Restart a container"
+  echo "    destroy:    Stop and remove a container"
+  echo "    enter:      Use nsenter to enter a container"
+  echo "    ssh:        Start a bash shell in a running container"
+  echo "    logs:       Docker logs for container"
+  echo "    bootstrap:  Bootstrap a container for the config based on a template"
+  echo "    rebuild:    Rebuild a container (destroy old, bootstrap, start new)"
+  echo "    cleanup:    Remove all containers that have stopped for > 24 hours"
+  echo
+  echo "Options:"
+  echo "    --skip-prereqs   Don't check prerequisites or resource requirements"
+  echo "    --docker-args    Extra arguments to pass when running docker"
+  exit 1
+}
+
+compare_version() {
+    declare -a ver_a
+    declare -a ver_b
+    IFS=. read -a ver_a <<< "$1"
+    IFS=. read -a ver_b <<< "$2"
+
+    while [[ -n $ver_a ]]; do
+        if (( ver_a > ver_b )); then
+            return 0
+        elif (( ver_b > ver_a )); then
+            return 1
+        else
+            unset ver_a[0]
+            ver_a=("${ver_a[@]}")
+            unset ver_b[0]
+            ver_b=("${ver_b[@]}")
+        fi
+    done
+    return 1  # They are equal
+}
+
+prereqs() {
+
+  # 1. docker daemon running?
+  # we send stderr to /dev/null cause we don't care about warnings,
+  # it usually complains about swap which does not matter
+  test=`$docker_path info 2> /dev/null`
+
+  if [[ $? -ne 0 ]] ; then
+    echo "Cannot connect to the docker daemon - verify it is running and you have access"
+    exit 1
+  fi
+
+  # 2. running aufs or btrfs
+  test=`$docker_path info 2> /dev/null | grep 'Driver: '`
+  if [[ "$test" =~ [aufs|btrfs|zfs|overlay] ]] ; then : ; else
+    echo "Your Docker installation is not using a supported filesystem if we were to proceed you may have a broken install."
+    echo "aufs is the recommended filesystem you should be using (zfs/btrfs and overlay may work as well)"
+    echo "You can tell what filesystem you are using by running \"docker info\" and looking at the driver"
+    echo ""
+    echo "If you wish to continue anyway using your existing unsupported filesystem"
+    echo "read the source code of launcher and figure out how to bypass this."
+    exit 1
+  fi
+
+  # 3. running recommended docker version
+  test=($($docker_path --version))  # Get docker version string
+  test=${test[2]//,/}  # Get version alone and strip comma if exists
+
+  [[ "$test" =~ "0.12.0" ]] && echo "You are running a broken version of Docker, please upgrade ASAP. See: https://meta.discourse.org/t/the-installation-stopped-in-the-middle/16311/ for more details." && exit 1
+
+  # At least minimum version
+  if compare_version "${docker_min_version}" "${test}"; then
+    echo "ERROR: Docker version ${test} not supported, please upgrade to at least ${docker_min_version}, or recommended ${docker_rec_version}"
+    exit 1
+  fi
+
+  # Recommend best version
+  if compare_version "${docker_rec_version}" "${test}"; then
+    echo "WARNING: Docker version ${test} deprecated, recommend upgrade to ${docker_rec_version} or newer."
+  fi
+
+  # 4. discourse docker image is downloaded
+  test=`$docker_path images | awk '{print $1 ":" $2 }' | grep "$image"`
+
+  if [ -z "$test" ]; then
+    echo
+    echo "WARNING: We are about to start downloading the Discourse base image"
+    echo "This process may take anywhere between a few minutes to an hour, depending on your network speed"
+    echo
+    echo "Please be patient"
+    echo
+
+  fi
+
+  # 5. able to attach stderr / out / tty
+  test=`$docker_path run $user_args -i --rm -a stdout -a stderr $image echo working`
+  if [[ "$test" =~ "working" ]] ; then : ; else
+    echo "Your Docker installation is not working correctly"
+    echo
+    echo "See: https://meta.discourse.org/t/docker-error-on-bootstrap/13657/18?u=sam"
+    exit 1
+  fi
+
+}
+
+check_resources() {
+  # Memory
+  resources="ok"
+  avail_mem="$(LANG=C free -m | grep '^Mem:' | awk '{print $2}')"
+  if [ "$avail_mem" -lt 900 ]; then
+    resources="insufficient"
+    echo "WARNING: You do not appear to have sufficient memory to run Discourse."
+    echo
+    echo "Your system may not work properly, or future upgrades of Discourse may"
+    echo "not complete successfully."
+    echo
+    echo "See https://github.com/discourse/discourse/blob/master/docs/INSTALL-cloud.md#create-new-cloud-server"
+  elif [ "$avail_mem" -lt 1800 ]; then
+    total_swap="$(LANG=C free -m | grep ^Swap: | awk '{print $2}')"
+    if [ "$total_swap" -lt 1000 ]; then
+      resources="insufficient"
+      echo "WARNING: You must have at least 1GB of swap when running with less"
+      echo "than 2GB of RAM."
+      echo
+      echo "Your system may not work properly, or future upgrades of Discourse may"
+      echo "not complete successfully."
+      echo
+      echo "See https://github.com/discourse/discourse/blob/master/docs/INSTALL-cloud.md#set-up-swap-if-needed"
+    fi
+  fi
+
+  # Disk space
+  free_disk="$(df /var | tail -n 1 | awk '{print $4}')"
+  if [ "$free_disk" -lt 5000 ]; then
+    resources="insufficient"
+    echo "WARNING: You must have at least 5GB of *free* disk space to run Discourse."
+    echo
+    echo "Insufficient disk space may result in problems running your site, and may"
+    echo "not even allow Discourse installation to complete successfully."
+    echo
+    echo "Please free up some space, or expand your disk, before continuing."
+    exit 1
+  fi
+
+  if [ -t 0 ] && [ "$resources" != "ok" ]; then
+    echo
+    read -p "Press ENTER to continue, or Ctrl-C to exit and give your system more resources"
+  fi
+}
+
+check_ports() {
+  local valid=$(netstat -tln | awk '{print $4}' | grep ":${1}\$")
+
+  if [ -n "$valid" ]; then
+    echo "Launcher has detected that port ${1} is in use."
+    echo ""
+    echo "If you are trying to run Discourse simultaneously with another web server like Apache or nginx, you will need to bind to a different port."
+    echo "See https://meta.discourse.org/t/17247 for help."
+    exit 1
+  fi
+}
+
+if [ "$opt" != "--skip-prereqs" ] ; then
+  prereqs
+fi
+
+if [ "$opt" == "--docker-args" ] ; then
+  user_args=$4
+else
+  user_args=""
+fi
+
+get_ssh_pub_key() {
+  local ${ssh_key_locations}
+  ssh_key_locations=(
+    ~/.ssh/id_ed25519.pub
+    ~/.ssh/id_ecdsa.pub
+    ~/.ssh/id_rsa.pub
+    ~/.ssh/id_dsa.pub
+    ~core/.ssh/authorized_keys
+  )
+
+  local $keyfile
+  for keyfile in "${ssh_key_locations[@]}"; do
+    if [[ -e ${keyfile} ]] ; then
+      ssh_pub_key="$(cat ${keyfile})"
+      return 0
+    fi
+  done
+
+  return 0
+}
+
+
+install_docker() {
+
+  echo "Docker is not installed, you will need to install Docker in order to run Discourse"
+  echo "Please visit https://docs.docker.com/installation/ for instructions on how to do this for your system"
+  echo
+  echo "If you are running Ubuntu Trusty or later, you can try the following:"
+  echo
+
+  echo "sudo apt-key adv --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys 58118E89F3A912897C070ADBF76221572C52609D"
+  echo "sudo sh -c \"echo deb https://apt.dockerproject.org/repo ubuntu-$(lsb_release -sc) main > /etc/apt/sources.list.d/docker.list\""
+  echo "sudo apt-get update"
+  echo "sudo apt-get install docker-engine"
+
+  exit 1
+}
+
+host_run() {
+  read -r -d '' env_ruby << 'RUBY'
+  require 'yaml'
+
+  input = STDIN.readlines.join
+  yaml = YAML.load(input)
+
+  if host_run = yaml['host_run']
+    params = yaml['params'] || {}
+    host_run.each do |run|
+      params.each do |k,v|
+        run = run.gsub("$#{k}", v)
+      end
+      STDOUT.write "#{run}--SEP--"
+    end
+  end
+RUBY
+
+  host_run=`cat $config_file | $docker_path run $user_args --rm -i -a stdout -a stdin $image ruby -e "$env_ruby"`
+
+  while [ "$host_run" ] ; do
+    iter=${host_run%%--SEP--*}
+    echo
+    echo "Host run: $iter"
+    $iter || exit 1
+    echo
+    host_run="${host_run#*--SEP--}"
+  done
+}
+
+
+set_volumes() {
+  volumes=`cat $config_file | $docker_path run $user_args --rm -i -a stdout -a stdin $image ruby -e \
+        "require 'yaml'; puts YAML.load(STDIN.readlines.join)['volumes'].map{|v| '-v ' << v['volume']['host'] << ':' << v['volume']['guest'] << ' '}.join"`
+}
+
+set_links() {
+    links=`cat $config_file | $docker_path run $user_args --rm -i -a stdout -a stdin $image ruby -e \
+        "require 'yaml'; puts YAML.load(STDIN.readlines.join)['links'].map{|l| '--link ' << l['link']['name'] << ':' << l['link']['alias'] << ' '}.join"`
+}
+
+set_template_info() {
+
+    templates=`cat $config_file | $docker_path run $user_args --rm -i -a stdin -a stdout $image ruby -e \
+      "require 'yaml'; puts YAML.load(STDIN.readlines.join)['templates']"`
+
+
+    arrTemplates=(${templates// / })
+    config_data=$(cat $config_file)
+
+    input="hack: true"
+
+
+    for template in "${arrTemplates[@]}"
+    do
+      [ ! -z $template ] && {
+        input="$input _FILE_SEPERATOR_ $(cat $template)"
+      }
+    done
+
+    # we always want our config file last so it takes priority
+    input="$input _FILE_SEPERATOR_ $config_data"
+
+    read -r -d '' env_ruby << 'RUBY'
+    require 'yaml'
+
+    input=STDIN.readlines.join
+    # default to UTF-8 for the dbs sake
+    env = {'LANG' => 'en_US.UTF-8'}
+    input.split('_FILE_SEPERATOR_').each do |yml|
+       yml.strip!
+       begin
+         env.merge!(YAML.load(yml)['env'] || {})
+       rescue Psych::SyntaxError => e
+        puts e
+        puts "*ERROR."
+       rescue => e
+        puts yml
+        p e
+       end
+    end
+    puts env.map{|k,v| "-e\n#{k}=#{v}" }.join("\n")
+RUBY
+
+    raw=`exec echo "$input" | $docker_path run $user_args --rm -i -a stdin -a stdout $image ruby -e "$env_ruby"`
+
+    env=()
+    ok=1
+    while read i; do
+      if [ "$i" == "*ERROR." ]; then
+        ok=0
+      elif [ -n "$i" ]; then
+        env[${#env[@]}]=$i
+      fi
+    done <<< "$raw"
+
+    if [ "$ok" -ne 1 ]; then
+      echo "${env[@]}"
+      echo "YAML syntax error. Please check your /var/discourse/containers/*.yml config files."
+      exit 1
+    fi
+}
+
+[ -z $docker_path ] && {
+  install_docker
+}
+
+[ "$command" == "cleanup" ] && {
+  echo
+  echo "The following command will"
+  echo "- Delete all docker images for old containers"
+  echo "- Delete all stopped and orphan containers"
+  echo
+  read -p "Are you sure (Y/n): " -n 1 -r && echo
+  if [[ $REPLY =~ ^[Yy]$ || ! $REPLY ]]
+    then
+      space=$(df /var/lib/docker | awk '{ print $4 }' | grep -v Available)
+      echo "Starting Cleanup (bytes free $space)"
+
+      STATE_DIR=./.gc-state scripts/docker-gc
+
+      space=$(df /var/lib/docker | awk '{ print $4 }' | grep -v Available)
+      echo "Finished Cleanup (bytes free $space)"
+
+    else
+      exit 1
+  fi
+  exit 0
+}
+
+[ $# -lt 2 ] && {
+  usage
+}
+
+if [ ! -e $config_file ]
+  then
+    echo "Config file was not found, ensure $config_file exists"
+    echo ""
+    echo "Available configs ( `cd containers && ls -dm *.yml | tr -s '\n' ' ' | awk '{ gsub(/\.yml/, ""); print }'`)"
+    exit 1
+fi
+
+
+docker_version=($($docker_path --version))
+docker_version=${test[2]//,/}
+
+if compare_version "1.2.0" "$docker_version"; then
+  echo "We recommend you upgrade docker, the version you are running has no restart policies, on reboot your container may not start up"
+  restart_policy=""
+else
+  restart_policy=${restart_policy:---restart=always}
+fi
+
+set_existing_container(){
+  existing=`$docker_path ps -a | awk '{ print $1, $(NF) }' | grep " $config$" | awk '{ print $1 }'`
+}
+
+run_stop(){
+
+  set_existing_container
+
+  if [ ! -z $existing ]
+     then
+       (
+        set -x
+        $docker_path stop -t 10 $config
+       )
+     else
+       echo "$config was not started !"
+       exit 1
+  fi
+}
+
+set_run_image() {
+  run_image=`cat $config_file | $docker_path run $user_args --rm -i -a stdin -a stdout $image ruby -e \
+    "require 'yaml'; puts YAML.load(STDIN.readlines.join)['run_image']"`
+
+  if [ -z "$run_image" ]; then
+    run_image="$local_discourse/$config"
+  fi
+}
+
+set_boot_command() {
+  boot_command=`cat $config_file | $docker_path run $user_args --rm -i -a stdin -a stdout $image ruby -e \
+    "require 'yaml'; puts YAML.load(STDIN.readlines.join)['boot_command']"`
+
+  if [ -z "$boot_command" ]; then
+
+    no_boot_command=`cat $config_file | $docker_path run $user_args --rm -i -a stdin -a stdout $image ruby -e \
+      "require 'yaml'; puts YAML.load(STDIN.readlines.join)['no_boot_command']"`
+
+    if [ -z "$no_boot_command" ]; then
+      boot_command="/sbin/boot"
+    fi
+  fi
+}
+
+run_start(){
+
+   existing=`$docker_path ps | awk '{ print $1, $(NF) }' | grep " $config$" | awk '{ print $1 }'`
+   echo $existing
+   if [ ! -z $existing ]
+   then
+     echo "Nothing to do, your container has already started!"
+     exit 1
+   fi
+
+   existing=`$docker_path ps -a | awk '{ print $1, $(NF) }' | grep " $config$" | awk '{ print $1 }'`
+   if [ ! -z $existing ]
+   then
+     echo "starting up existing container"
+     (
+       set -x
+       $docker_path start $config
+     )
+     exit 0
+   fi
+
+   host_run
+   ports=`cat $config_file | $docker_path run $user_args --rm -i -a stdout -a stdin $image ruby -e \
+          "require 'yaml'; puts YAML.load(STDIN.readlines.join)['expose'].map{|p| \"-p #{p}\"}.join(' ')"`
+
+   IFS='-p ' read -a array <<< "$ports"
+   for element in "${array[@]}"
+   do
+     IFS=':' read -a args <<< "$element"
+     if [ "${#args[@]}" == "2" ]; then
+       check_ports "${args[0]}"
+     elif [ "${#args[@]}" == "3" ]; then
+       check_ports "${args[1]}"
+     fi
+   done
+
+   docker_args=`cat $config_file | $docker_path run $user_args --rm -i -a stdout -a stdin $image ruby -e \
+          "require 'yaml'; puts YAML.load(STDIN.readlines.join)['docker_args']"`
+
+   set_template_info
+   set_volumes
+   set_links
+   set_run_image
+   set_boot_command
+
+   (
+     hostname=`hostname`
+     set -x
+     $docker_path run $user_args $links $attach_on_run $restart_policy "${env[@]}" -h "$hostname-$config" \
+        -e DOCKER_HOST_IP=$docker_ip --name $config -t $ports $volumes $docker_args $run_image $boot_command
+
+   )
+   exit 0
+
+}
+
+run_bootstrap(){
+
+  if [ "$opt" != "--skip-prereqs" ] ; then
+    check_resources
+  fi
+
+  host_run
+
+  get_ssh_pub_key
+
+  # Is the image available?
+  # If not, pull it here so the user is aware what's happening.
+  $docker_path history $image >/dev/null 2>&1 || $docker_path pull $image
+
+  set_template_info
+
+  base_image=`cat $config_file | $docker_path run $user_args --rm -i -a stdin -a stdout $image ruby -e \
+    "require 'yaml'; puts YAML.load(STDIN.readlines.join)['base_image']"`
+
+  update_pups=`cat $config_file | $docker_path run $user_args --rm -i -a stdin -a stdout $image ruby -e \
+    "require 'yaml'; puts YAML.load(STDIN.readlines.join)['update_pups']"`
+
+  if [[ ! X"" = X"$base_image" ]]; then
+    image=$base_image
+  fi
+
+  set_volumes
+  set_links
+
+  rm -f $cidbootstrap
+
+  run_command="cd /pups &&"
+  if [[ ! "false" =  $update_pups ]]; then
+    run_command="$run_command git pull &&"
+  fi
+  run_command="$run_command /pups/bin/pups --stdin"
+
+  echo $run_command
+
+  env=("${env[@]}" "-e" "SSH_PUB_KEY=$ssh_pub_key")
+
+  (exec echo "$input" | $docker_path run $user_args $links "${env[@]}" -e DOCKER_HOST_IP=$docker_ip --cidfile $cidbootstrap -i -a stdin -a stdout -a stderr $volumes $image \
+     /bin/bash -c "$run_command") \
+     || ($docker_path rm `cat $cidbootstrap` && rm $cidbootstrap)
+
+  [ ! -e $cidbootstrap ] && echo "** FAILED TO BOOTSTRAP ** please scroll up and look for earlier error messages, there may be more than one" && exit 1
+
+  sleep 5
+
+  $docker_path commit `cat $cidbootstrap` $local_discourse/$config || echo 'FAILED TO COMMIT'
+  $docker_path rm `cat $cidbootstrap` && rm $cidbootstrap
+}
+
+
+
+case "$command" in
+  bootstrap)
+      run_bootstrap
+      echo "Successfully bootstrapped, to startup use ./launcher start $config"
+      exit 0
+      ;;
+
+  enter)
+      exec $docker_path exec -it $config /bin/bash
+      ;;
+
+  ssh)
+       existing=`$docker_path ps | awk '{ print $1, $(NF) }' | grep " $config$" | awk '{ print $1 }'`
+
+       if [[ ! -z $existing ]]; then
+         address="`$docker_path port $config 22`"
+         split=(${address//:/ })
+         exec ssh -o StrictHostKeyChecking=no root@${split[0]} -p ${split[1]}
+       else
+         echo "$config is not running!"
+         exit 1
+       fi
+      ;;
+
+  stop)
+      run_stop
+      exit 0
+      ;;
+
+  logs)
+
+      $docker_path logs $config
+      exit 0
+      ;;
+
+  restart)
+      run_stop
+      run_start
+      exit 0
+      ;;
+
+  start)
+      run_start
+      exit 0
+      ;;
+
+  rebuild)
+      if [ "$(git symbolic-ref --short HEAD)" == "master" ]; then
+        echo "Ensuring discourse docker is up to date"
+
+        git remote update
+
+        LOCAL=$(git rev-parse @)
+        REMOTE=$(git rev-parse @{u})
+        BASE=$(git merge-base @ @{u})
+
+        if [ $LOCAL = $REMOTE ]; then
+          echo "Discourse Docker is up-to-date"
+
+        elif [ $LOCAL = $BASE ]; then
+          echo "Updating Discourse Docker"
+          git pull || (echo 'failed to update' && exit 1)
+          exec /bin/bash $0 $@
+
+        elif [ $REMOTE = $BASE ]; then
+          echo "Your version of Discourse Docker is ahead of origin"
+
+        else
+          echo "Discourse Docker has diverged source, this is only expected in Dev mode"
+        fi
+
+      fi
+
+      set_existing_container
+
+      if [ ! -z $existing ]
+        then
+          echo "Stopping old container"
+          (
+            set -x
+            $docker_path stop -t 10 $config
+          )
+      fi
+
+      run_bootstrap
+
+      if [ ! -z $existing ]
+        then
+          echo "Removing old container"
+          (
+            set -x
+            $docker_path rm $config
+          )
+      fi
+
+      run_start
+      exit 0
+      ;;
+
+
+  destroy)
+      (set -x; $docker_path stop -t 10 $config && $docker_path rm $config) || (echo "$config was not found" && exit 0)
+      exit 0
+      ;;
+esac
+
+usage

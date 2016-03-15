@@ -1,0 +1,11 @@
+#!/bin/bash
+set -e
+VERSION=1.87
+cd /tmp
+curl -O http://www.lcdf.org/gifsicle/gifsicle-$VERSION.tar.gz
+tar zxf gifsicle-$VERSION.tar.gz
+cd gifsicle-$VERSION
+./configure
+make install
+cd /
+rm -fr /tmp/gifsicle*

@@ -1,0 +1,25 @@
+run:
+  - file:
+     path: /etc/runit/1.d/remove-old-socket
+     chmod: "+x"
+     contents: |
+        #!/bin/bash
+        rm -f /shared/nginx.http*.sock
+  - file:
+     path: /etc/runit/3.d/remove-old-socket
+     chmod: "+x"
+     contents: |
+        #!/bin/bash
+        rm -f /shared/nginx.http*.sock
+  - replace:
+     filename: "/etc/nginx/conf.d/discourse.conf"
+     from: /listen 80;/
+     to: |
+       listen unix:/shared/nginx.http.sock;
+       set_real_ip_from unix:;
+  - replace:
+     filename: "/etc/nginx/conf.d/discourse.conf"
+     from: /listen 443 ssl http2;/
+     to: |
+       listen unix:/shared/nginx.https.sock ssl http2;
+       set_real_ip_from unix:;

@@ -1,0 +1,249 @@
+env:
+  # You can have redis on a different box
+  RAILS_ENV: 'production'
+  UNICORN_WORKERS: 3
+  UNICORN_SIDEKIQS: 1
+  # slightly less aggressive than "recommendation" but works fine with oobgc
+  RUBY_GC_MALLOC_LIMIT: 40000000
+  # this ensures we have enough heap space to handle a big pile of small reqs
+  RUBY_HEAP_MIN_SLOTS: 800000
+
+  DISCOURSE_DB_SOCKET: /var/run/postgresql
+  DISCOURSE_DB_HOST:
+  DISCOURSE_DB_PORT:
+
+
+params:
+  # SSH key is required for remote access into the container
+  version: tests-passed
+
+  home: /var/www/discourse
+  upload_size: 10m
+
+run:
+  - exec: /usr/local/bin/ruby -e 'if ENV["DISCOURSE_SMTP_ADDRESS"] == "smtp.example.com"; puts "Aborting! Mail is not configured!"; exit 1; end'
+  - exec: /usr/local/bin/ruby -e 'if ENV["DISCOURSE_HOSTNAME"] == "discourse.example.com"; puts "Aborting! Domain is not configured!"; exit 1; end'
+  - file:
+     path: /etc/runit/1.d/copy-env
+     chmod: "+x"
+     contents: |
+        #!/bin/bash
+        env > ~/boot_env
+        conf=/var/www/discourse/config/discourse.conf
+
+        # find DISCOURSE_ env vars, strip the leader, lowercase the key
+        /usr/local/bin/ruby -e 'ENV.each{|k,v| puts "#{$1.downcase} = #{v}" if k =~ /^DISCOURSE_(.*)/}' > $conf
+
+  - file:
+     path: /etc/runit/1.d/ensure-web-nginx-read
+     chmod: "+x"
+     contents: |
+        #!/bin/bash
+        mkdir -p /var/log/nginx
+        chgrp -R www-data /var/log/nginx
+        chgrp www-data /var/log/nginx
+
+  - file:
+     path: /etc/service/unicorn/run
+     chmod: "+x"
+     contents: |
+        #!/bin/bash
+        exec 2>&1
+        # redis
+        # postgres
+        cd $home
+        chown -R discourse:www-data /shared/log/rails
+        LD_PRELOAD=/usr/lib/libjemalloc.so.1 HOME=/home/discourse USER=discourse exec chpst -u discourse:www-data -U discourse:www-data bundle exec config/unicorn_launcher -E production -c config/unicorn.conf.rb
+
+  - file:
+     path: /etc/service/nginx/run
+     chmod: "+x"
+     contents: |
+        #!/bin/sh
+        exec 2>&1
+        exec /usr/sbin/nginx
+
+  - file:
+     path: /etc/runit/3.d/01-nginx
+     chmod: "+x"
+     contents: |
+       #!/bin/bash
+       sv stop nginx
+
+  - file:
+     path: /etc/runit/3.d/02-unicorn
+     chmod: "+x"
+     contents: |
+       #!/bin/bash
+       sv stop unicorn
+
+  - exec:
+      cd: $home
+      hook: code
+      cmd:
+        - git reset --hard
+        - git clean -f
+        - git remote set-branches --add origin master
+        - git pull
+        - git fetch origin $version
+        - git checkout $version
+        - mkdir -p tmp/pids
+        - mkdir -p tmp/sockets
+        - touch tmp/.gitkeep
+        - mkdir -p                    /shared/log/rails
+        - bash -c "touch -a           /shared/log/rails/{production,production_errors,unicorn.stdout,unicorn.stderr}.log"
+        - bash -c "ln    -s           /shared/log/rails/{production,production_errors,unicorn.stdout,unicorn.stderr}.log $home/log"
+        - bash -c "mkdir -p           /shared/{uploads,backups}"
+        - bash -c "ln    -s           /shared/{uploads,backups} $home/public"
+        - chown -R discourse:www-data /shared/log/rails /shared/uploads /shared/backups
+
+  - exec:
+      cmd:
+        - "cp $home/config/nginx.sample.conf /etc/nginx/conf.d/discourse.conf"
+        - "rm /etc/nginx/sites-enabled/default"
+        - "mkdir -p /var/nginx/cache"
+
+  - replace:
+      filename: /etc/nginx/nginx.conf
+      from: pid /run/nginx.pid;
+      to: daemon off;
+
+  - replace:
+      filename: "/etc/nginx/conf.d/discourse.conf"
+      from: /upstream[^\}]+\}/m
+      to: "upstream discourse {
+        server 127.0.0.1:3000;
+      }"
+
+  - replace:
+      filename: "/etc/nginx/conf.d/discourse.conf"
+      from: /server_name.+$/
+      to: server_name _ ;
+
+  - replace:
+      filename: "/etc/nginx/conf.d/discourse.conf"
+      from: /client_max_body_size.+$/
+      to: client_max_body_size $upload_size ;
+
+  - exec:
+      cmd: echo "done configuring web"
+      hook: web_config
+
+  - exec:
+      cd: $home
+      hook: web
+      cmd:
+        # ensure we are on latest bundler
+        - gem update bundler
+        - chown -R discourse $home
+
+  - exec:
+      cd: $home
+      hook: bundle_exec
+      cmd:
+        - su discourse -c 'bundle install --deployment --verbose --without test --without development'
+        - su discourse -c 'bundle exec rake db:migrate'
+        - su discourse -c 'bundle exec rake assets:precompile'
+
+  - file:
+     path: /usr/local/bin/discourse
+     chmod: +x
+     contents: |
+       #!/bin/bash
+       (cd /var/www/discourse && RAILS_ENV=production sudo -H -E -u discourse bundle exec script/discourse "$@")
+
+  - file:
+     path: /usr/local/bin/rails
+     chmod: +x
+     contents: |
+       #!/bin/bash
+       # If they requested a console, load pry instead
+       if [ "$*" == "c" -o "$*" == "console" ]
+       then
+        (cd /var/www/discourse && RAILS_ENV=production sudo -H -E -u discourse bundle exec pry -r ./config/environment)
+       else
+        (cd /var/www/discourse && RAILS_ENV=production sudo -H -E -u discourse bundle exec script/rails "$@")
+       fi
+
+  - file:
+     path: /usr/local/bin/rake
+     chmod: +x
+     contents: |
+       #!/bin/bash
+       (cd /var/www/discourse && RAILS_ENV=production sudo -H -E -u discourse bundle exec bin/rake "$@")
+
+  - file:
+     path: /etc/update-motd.d/10-web
+     chmod: +x
+     contents: |
+       #!/bin/bash
+       echo
+       echo Use: rails, rake or discourse to execute commands in production
+       echo
+
+  - file:
+     path: /etc/logrotate.d/rails
+     contents: |
+        /shared/log/rails/*.log
+        {
+                rotate 14
+                dateext
+                daily
+                missingok
+                notifempty
+                delaycompress
+                compress
+                postrotate
+                sv 1 unicorn
+                endscript
+        }
+
+  - file:
+     path: /etc/logrotate.d/nginx
+     contents: |
+        /var/log/nginx/*.log {
+          daily
+          missingok
+          rotate 14
+          compress
+          delaycompress
+          notifempty
+          create 0640 www-data www-data
+          sharedscripts
+          postrotate
+            sv 1 nginx
+          endscript
+        }
+
+  # move state out of the container this fancy is done to support rapid rebuilds of containers,
+  # we store anacron and logrotate state outside the container to ensure its maintained across builds
+  # later move this snipped into an intialization script
+  # we also ensure all the symlinks we need to /shared are in place in the correct structure
+  # this allows us to bootstrap on one machine and then run on another
+  - file:
+      path: /etc/runit/1.d/00-ensure-links
+      chmod: +x
+      contents: |
+        #!/bin/bash
+        if [[ ! -L /var/lib/logrotate ]]; then
+          rm -fr /var/lib/logrotate
+          mkdir -p /shared/state/logrotate
+          ln -s /shared/state/logrotate /var/lib/logrotate
+        fi
+        if [[ ! -L /var/spool/anacron ]]; then
+          rm -fr /var/spool/anacron
+          mkdir -p /shared/state/anacron-spool
+          ln -s /shared/state/anacron-spool /var/spool/anacron
+        fi
+        if [[ ! -d /shared/log/rails ]]; then
+          mkdir -p /shared/log/rails
+          chown -R discourse:www-data /shared/log/rails
+        fi
+        if [[ ! -d /shared/uploads ]]; then
+          mkdir -p /shared/uploads
+          chown -R discourse:www-data /shared/uploads
+        fi
+        if [[ ! -d /shared/backups ]]; then
+          mkdir -p /shared/backups
+          chown -R discourse:www-data /shared/backups
+        fi
