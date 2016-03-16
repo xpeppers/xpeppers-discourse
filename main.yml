@@ -1,6 +1,6 @@
 ---
 - hosts: all
-  pre_tasks:
+  tasks:
   - name: create a new user
     sudo: yes
     user: name=web
@@ -16,9 +16,11 @@
     apt: name={{item}} state=present
     with_items:
        - git
-  post_tasks:
-    - synchronize: src=discourse-source dest=/var/discourse
-      sudo: yes
-  roles:
-    - role: angstwad.docker_ubuntu
-      sudo: yes
+  - synchronize: src=discourse-source dest=/var/discourse
+    sudo: yes
+  - command: wget -qO- https://get.docker.com/ | sh
+    sudo: yes
+  - service: name=docker state=restarted
+    sudo: yes
+  - command: /var/discourse/launcher app start
+    sudo: yes
