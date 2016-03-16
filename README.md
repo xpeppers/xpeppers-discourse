@@ -27,6 +27,14 @@ vagrant up
 
 ---
 
+Install the ansible roles:
+
+```
+sudo ansible-galaxy install -r requirements.yml
+```
+
+---
+
 Provision the vagrant machine:
 
 ```

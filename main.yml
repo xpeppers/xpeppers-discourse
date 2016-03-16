@@ -1,28 +1,40 @@
 ---
 - hosts: all
-  tasks:
-  - name: create a new user
+  sudo: yes
+  roles:
+    - angstwad.docker_ubuntu
+  post_tasks:
+  - name: add discourse user
+    user: name=discourse groups=sudo,admin
+  - synchronize: src=discourse dest=/var/
     sudo: yes
-    user: name=web
-          state=present
-          group=sudo
-          groups="sudo"
-          password="any"
-  - name: update apt cache
+  - shell: docker ps
     sudo: yes
-    apt: update_cache=yes cache_valid_time=3600
-  - name: install apt packages
-    sudo: yes
-    apt: name={{item}} state=present
-    with_items:
-       - git
-  - synchronize: src=discourse-source dest=/var/discourse
-    sudo: yes
-  - command: wget -qO- https://get.docker.com/ | sh
-    sudo: yes
+    register: discourse_running
+  - debug: msg="discourse_running {{discourse_running}}"
   - service: name=docker state=restarted
     sudo: yes
-  - command: /var/discourse/discourse-source/launcher bootstrap app
+  - command: docker ps -qa
+    register: docker_ps_qa
     sudo: yes
-  - command: /var/discourse/discourse-source/launcher start app
+  - command: ./launcher bootstrap app
+    args:
+      chdir: /var/discourse
+    when: discourse_running.stdout.find('local_discourse/app') == -1
+    sudo: yes
+  - command: docker ps -qa
+    register: docker_ps_qa
+    sudo: yes
+  - debug: msg="{{docker_ps_qa}}"
+  # - command: docker rm -f "{{docker_ps_qa.stdout}}"
+  #   when: docker_ps_qa.stdout_lines != []
+  #   sudo: yes
+  - command: ./launcher stop app
+    when: docker_ps_qa.stdout_lines != []
+    args:
+      chdir: /var/discourse
+    sudo: yes
+  - command: ./launcher start app
+    args:
+      chdir: /var/discourse
     sudo: yes
