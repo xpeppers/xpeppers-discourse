@@ -22,5 +22,7 @@
     sudo: yes
   - service: name=docker state=restarted
     sudo: yes
-  - command: /var/discourse/launcher app start
+  - command: /var/discourse/discourse-source/launcher bootstrap app
+    sudo: yes
+  - command: /var/discourse/discourse-source/launcher start app
     sudo: yes

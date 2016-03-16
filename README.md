@@ -37,6 +37,13 @@ ansible-playbook -i inventory/vagrant_hosts  main.yml --private-key ~/.vagrant.d
 
 
 
+### Gather info about the machine
+
+```
+ansible discourse -i inventory/vagrant_hosts --private-key ~/.vagrant.d/insecure_private_key -u vagrant -m setup
+```
+
+
 # Notes
 
 Ansibles `gather_facts` cannot be disabled.
