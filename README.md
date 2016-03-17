@@ -36,7 +36,7 @@ Install the ansible roles:
 
 **IMPORTANT:**
 
-Configure Discourse by
+Configure Discourse with
 
 ```
 cp playbooks/files/discourse/samples/standalone.yml playbooks/files/discourse/containers/app.yml
@@ -81,6 +81,18 @@ scripts/logs_vagrant
 # or
 
 scripts/logs_aws
+```
+
+
+
+
+
+
+
+### Execute arbitrary commands
+
+```
+scripts/cmd_aws "ls -lh /var/discourse"
 ```
 
 

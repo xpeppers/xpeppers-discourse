@@ -1,0 +1,13 @@
+#!/bin/sh
+
+if [ $# -eq 1 ]; then
+  PEM="~/.ssh/xpeppers/discourse.pem"
+  CMD=$1
+else
+  PEM=$1
+  CMD=$2
+fi
+
+echo "executing command $CMD"
+
+ansible discourse -i inventory/aws_hosts --private-key "$PEM" -u ubuntu -m command -a "$CMD"
