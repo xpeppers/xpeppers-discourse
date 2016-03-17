@@ -38,7 +38,7 @@ sudo ansible-galaxy install -r requirements.yml
 Provision the vagrant machine:
 
 ```
-ansible-playbook -i inventory/vagrant_hosts  main.yml --private-key ~/.vagrant.d/insecure_private_key -u vagrant -vvvv
+ansible-playbook playbooks/main.yml -i inventory/vagrant_hosts --private-key ~/.vagrant.d/insecure_private_key -u vagrant -vvvv
 ```
 
 

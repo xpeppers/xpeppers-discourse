@@ -1,0 +1,5 @@
+---
+- command: ./launcher rebuild app
+  args:
+    chdir: /var/discourse
+  sudo: yes

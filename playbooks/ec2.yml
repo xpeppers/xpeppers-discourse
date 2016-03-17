@@ -1,0 +1,16 @@
+- hosts: all
+  connection: local
+  gather_facts: False
+
+  tasks:
+    - ec2:
+        key_name: discourse
+        instance_type: t2.micro
+        image: ami-123456
+        wait: yes
+        group: discourse
+        count: 1
+        #vpc_subnet_id: subnet-29e63245
+        assign_public_ip: yes
+        wait: true
+      register: ec2
