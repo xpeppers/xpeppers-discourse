@@ -1,8 +1,7 @@
 ---
 - name: add discourse user
   user: name=discourse groups=sudo,admin
-- synchronize: src=../discourse dest=/var/
-  sudo: yes
+- synchronize: src=discourse dest=/var/
 - service: name=docker state=restarted
   sudo: yes
 - shell: docker ps
