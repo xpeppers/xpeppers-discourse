@@ -1,3 +1,8 @@
 #!/bin/sh
 
-ansible-playbook playbooks/main.yml -i inventory/aws_hosts --private-key ~/.ssh/YOUR_AWS.pem -u ubuntu -vvvv
+PEM=$1
+if [ -z "$PEM" ];then
+  PEM="~/.ssh/xpeppers/discourse.pem"
+fi
+
+ansible-playbook playbooks/main.yml -i inventory/aws_hosts --private-key "$PEM" -u ubuntu -vvvv

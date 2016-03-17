@@ -1,0 +1,3 @@
+#!/bin/sh
+
+ansible discourse -i inventory/vagrant_hosts --private-key ~/.vagrant.d/insecure_private_key -u vagrant -m command -a "sudo /var/discourse/launcher logs app"

@@ -39,7 +39,7 @@ Install the ansible roles:
 Configure Discourse by
 
 ```
-cp discourse/samples/standalone.yml discourse/containers/app.yml
+cp playbooks/files/discourse/samples/standalone.yml playbooks/files/discourse/containers/app.yml
 ```
 
 and edit this file accordingly to your configuration.
@@ -75,12 +75,12 @@ scripts/info_aws
 
 ### Machine logs
 
-(Grab the container id first)
-
 ```
-ansible discourse -i inventory/aws_hosts --private-key ~/.ssh/xpeppers/discourse.pem  -u ubuntu -m command -a "sudo docker ps"
+scripts/logs_vagrant
 
-ansible discourse -i inventory/aws_hosts --private-key ~/.ssh/xpeppers/discourse.pem  -u ubuntu -m command -a "sudo docker logs CONTAINER-ID"
+# or
+
+scripts/logs_aws
 ```
 
 
