@@ -1,0 +1,3 @@
+#!/bin/sh
+
+ansible-playbook playbooks/main.yml -i inventory/vagrant_hosts --private-key ~/.vagrant.d/insecure_private_key -u vagrant -vvvv

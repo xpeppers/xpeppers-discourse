@@ -1,0 +1,3 @@
+#!/bin/sh
+
+ansible discourse -i inventory/aws_hosts --private-key ~/.ssh/xpeppers/discourse.pem -u ubuntu -m setup

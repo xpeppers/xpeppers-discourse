@@ -34,6 +34,8 @@ Install the ansible roles:
 
 ---
 
+**IMPORTANT:**
+
 Configure Discourse by
 
 ```
@@ -44,16 +46,14 @@ and edit this file accordingly to your configuration.
 
 ---
 
-Provision the vagrant machine:
+Provision with
 
 ```
-ansible-playbook playbooks/main.yml -i inventory/vagrant_hosts --private-key ~/.vagrant.d/insecure_private_key -u vagrant -vvvv
-```
+scripts/provision_vagrant
 
-Provisiong the ec2 instance
+# or
 
-```
-ansible-playbook playbooks/main.yml -i inventory/aws_hosts --private-key ~/.ssh/YOUR_AWS.pem -u ubuntu -vvvv
+scripts/provision_aws
 ```
 
 
@@ -62,8 +62,29 @@ ansible-playbook playbooks/main.yml -i inventory/aws_hosts --private-key ~/.ssh/
 ### Gather info about the machine
 
 ```
-ansible discourse -i inventory/vagrant_hosts --private-key ~/.vagrant.d/insecure_private_key -u vagrant -m setup
+scripts/info_vagrant
+
+# or
+
+scripts/info_aws
 ```
+
+
+
+
+
+### Machine logs
+
+(Grab the container id first)
+
+```
+ansible discourse -i inventory/aws_hosts --private-key ~/.ssh/xpeppers/discourse.pem  -u ubuntu -m command -a "sudo docker ps"
+
+ansible discourse -i inventory/aws_hosts --private-key ~/.ssh/xpeppers/discourse.pem  -u ubuntu -m command -a "sudo docker logs CONTAINER-ID"
+```
+
+
+
 
 
 # Notes
