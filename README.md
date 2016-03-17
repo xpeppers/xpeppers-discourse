@@ -8,7 +8,6 @@ example repo to provision of a machine to host the discourse platform
 - Ansible (tested with *1.9.3*)
 
 
-
 ## Installation
 
 Add an entry to your hosts file that maps the domain `discourse.dev` to the IP of the virtual machine:
@@ -30,7 +29,7 @@ vagrant up
 Install the ansible roles:
 
 ```
-sudo ansible-galaxy install -r requirements.yml
+[sudo] ansible-galaxy install -r requirements.yml
 ```
 
 ---
@@ -41,6 +40,11 @@ Provision the vagrant machine:
 ansible-playbook playbooks/main.yml -i inventory/vagrant_hosts --private-key ~/.vagrant.d/insecure_private_key -u vagrant -vvvv
 ```
 
+Provisiong the ec2 instance
+
+```
+ansible-playbook playbooks/main.yml -i inventory/aws_hosts --private-key ~/.ssh/YOUR_AWS.pem -u ubuntu -vvvv
+```
 
 
 
