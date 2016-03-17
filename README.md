@@ -34,6 +34,16 @@ Install the ansible roles:
 
 ---
 
+Configure Discourse by
+
+```
+cp discourse/samples/standalone.yml discourse/containers/app.yml
+```
+
+and edit this file accordingly to your configuration.
+
+---
+
 Provision the vagrant machine:
 
 ```

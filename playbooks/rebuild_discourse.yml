@@ -1,0 +1,5 @@
+---
+- hosts: all
+  sudo: yes
+  tasks:
+    - include: tasks/rebuild_discourse.yml
