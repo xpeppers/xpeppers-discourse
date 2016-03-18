@@ -1,0 +1,29 @@
+---
+- name: stop discourse
+  command: ./launcher stop app
+  args:
+    chdir: /var/discourse
+  ignore_errors: yes
+  register: stopped_discourse
+  sudo: yes
+
+- name: start discourse
+  command: ./launcher start app
+  args:
+    chdir: /var/discourse
+  ignore_errors: yes
+  sudo: yes
+
+- name: bootstrap discourse
+  command: ./launcher bootstrap app
+  args:
+    chdir: /var/discourse
+  sudo: yes
+
+- name: restart ssh
+  sudo: yes
+  action: service name=ssh state=restarted enabled=yes
+
+- name: reload systemd
+  sudo: yes
+  command: systemctl daemon-reload

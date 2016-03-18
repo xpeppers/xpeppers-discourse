@@ -10,4 +10,9 @@ fi
 
 echo "executing command $CMD"
 
-ansible discourse -i inventory/aws_hosts --private-key "$PEM" -u ubuntu -m command -a "$CMD"
+ansible discourse\
+  -i inventory/aws_hosts\
+  --private-key "$PEM"\
+  -u ubuntu\
+  -m command\
+  -a "$CMD"

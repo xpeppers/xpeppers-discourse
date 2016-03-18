@@ -2,7 +2,7 @@
 - hosts: all
   sudo: yes
   roles:
+    - resmo.ntp
+    - geerlingguy.firewall
     - angstwad.docker_ubuntu
-  post_tasks:
-    - include: tasks/provision_machine.yml
-    - include: tasks/launch_discourse.yml
+    - discourse

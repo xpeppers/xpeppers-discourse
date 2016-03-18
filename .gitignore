@@ -1,1 +1,3 @@
 .vagrant
+playbooks/files/app.yml
+playbooks/roles/discourse/files/app.yml

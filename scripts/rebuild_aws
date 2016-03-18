@@ -1,3 +1,0 @@
-#!/bin/sh
-
-ansible-playbook playbooks/rebuild_discourse.yml -i inventory/aws_hosts --private-key ~/.ssh/xpeppers/discourse.pem   -u ubuntu -vvvv

@@ -39,10 +39,12 @@ Install the ansible roles:
 Configure Discourse with
 
 ```
-cp playbooks/files/discourse/samples/standalone.yml playbooks/files/discourse/containers/app.yml
+cp playbooks/roles/discourse/files/discourse/samples/standalone.yml playbooks/roles/discourse/files/app.yml
 ```
 
-and edit this file accordingly to your configuration.
+and edit this file according to your configuration.
+
+*Note: Ansible keeps track of changes to this file, and rebuilds the discourse installation accordinglt, as described [here](https://github.com/discourse/discourse/blob/master/docs/INSTALL-cloud.md#email-is-important)*
 
 ---
 
@@ -55,9 +57,6 @@ scripts/provision_vagrant
 
 scripts/provision_aws
 ```
-
-
-
 
 ### Gather info about the machine
 
@@ -93,6 +92,9 @@ scripts/logs_aws
 
 ```
 scripts/cmd_aws "ls -lh /var/discourse"
+scripts/cmd_aws "sudo docker ps"
+
+scripts/cmd_aws [YOUR-PEM-LOCATION] "sudo docker ps"
 ```
 
 

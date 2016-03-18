@@ -1,0 +1,65 @@
+---
+- name: install apt packages
+  apt: pkg={{ item }} state=latest
+  sudo: yes
+  with_items:
+    - fail2ban
+    - ufw
+
+- name: ensure fail2ban is running
+  sudo: yes
+  action: service name=fail2ban state=restarted enabled=yes
+
+- name: forbid SSH root login
+  sudo: yes
+  lineinfile: destfile=/etc/ssh/sshd_config regexp="^PermitRootLogin" line="PermitRootLogin no" state=present
+  notify:
+    - restart ssh
+
+- name: reset firewall
+  sudo: yes
+  action: shell ufw --force reset
+
+- name: allow firewall authorized ports
+  sudo: yes
+  action: shell ufw allow {{ item }}
+  with_items:
+    - 22
+    - 80
+    - 443
+
+- name: enable firewall
+  sudo: yes
+  action: shell ufw --force enable
+
+- name: show firewall status
+  sudo: yes
+  action: shell ufw status
+
+
+- name: add discourse user
+  user: name=discourse groups=sudo,admin
+
+- name: ensure docker is running
+  service: name=docker state=restarted
+  sudo: yes
+
+- name: check if discourse is running
+  shell: docker ps
+  sudo: yes
+  register: discourse_running
+
+- name: copy discourse source
+  synchronize: src=discourse dest=/var/
+
+- name: copy discourse configuration app.yml
+  copy: src=app.yml dest=/var/discourse/containers/app.yml owner=discourse group=sudo
+  notify:
+    - stop discourse
+    - bootstrap discourse
+
+- name: start discourse ! handler
+  command: echo "start discourse"
+  when: stopped_discourse is defined
+  notify:
+    - start discourse
