@@ -1,3 +1,4 @@
 .vagrant
-playbooks/files/app.yml
 playbooks/roles/discourse/files/app.yml
+playbooks/roles/discourse/files/ssl.crt
+playbooks/roles/discourse/files/ssl.key

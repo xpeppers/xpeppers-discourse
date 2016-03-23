@@ -53,10 +53,27 @@
   synchronize: src=discourse dest=/var/
   notify:
     - stop discourse
-    - bootstrap discourse
+    - rebuild discourse
 
 - name: copy discourse configuration app.yml
   copy: src=app.yml dest=/var/discourse/containers/app.yml owner=discourse group=sudo
+  notify:
+    - stop discourse
+    - rebuild discourse
+
+- name: Create /var/discourse/shared/standalone/ssl directory
+  file: path=/var/discourse/shared/standalone/ssl state=directory owner=discourse group=sudo
+
+- name: copy ssl key
+  copy: src=ssl.key dest=/var/discourse/shared/standalone/ssl/ssl.key owner=discourse group=sudo
+  when: ssl_key is defined
+  notify:
+    - stop discourse
+    - rebuild discourse
+
+- name: copy ssl crt
+  copy: src=ssl.crt dest=/var/discourse/shared/standalone/ssl/ssl.crt owner=discourse group=sudo
+  when: ssl_crt is defined
   notify:
     - stop discourse
     - rebuild discourse
