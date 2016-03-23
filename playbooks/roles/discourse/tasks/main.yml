@@ -51,15 +51,20 @@
 
 - name: copy discourse source
   synchronize: src=discourse dest=/var/
+  notify:
+    - stop discourse
+    - bootstrap discourse
 
 - name: copy discourse configuration app.yml
   copy: src=app.yml dest=/var/discourse/containers/app.yml owner=discourse group=sudo
   notify:
     - stop discourse
-    - bootstrap discourse
+    - rebuild discourse
 
-- name: start discourse ! handler
+- meta: flush_handlers
+
+- name: restart discourse ! handler
   command: echo "start discourse"
-  when: stopped_discourse is defined
+  when: true
   notify:
-    - start discourse
+    - restart discourse
