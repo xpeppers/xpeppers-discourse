@@ -1,2 +1,2 @@
 [discourse]
-52.58.87.240
+52.58.87.240 ssl_key=ssl.key ssl_crt=ssl.crt

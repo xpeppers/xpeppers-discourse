@@ -48,6 +48,14 @@ and edit this file according to your configuration.
 
 ---
 
+**This is a required step to provision the production machine**
+
+Place the production ssl key and certificate under `playbooks/roles/discourse/files/` with the names:
+
+`ssl.key` and `ssl.crt`
+
+---
+
 Provision with
 
 ```
