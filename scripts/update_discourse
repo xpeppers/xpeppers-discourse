@@ -1,0 +1,8 @@
+#!/bin/sh
+
+DISCOURSE_LOCATION=playbooks/roles/discourse/files/discourse
+
+echo "--> removing old discourse source"
+rm -rf $DISCOURSE_LOCATION
+echo "--> fetching updated discourse source"
+git clone --depth=1 https://github.com/discourse/discourse_docker.git $DISCOURSE_LOCATION
