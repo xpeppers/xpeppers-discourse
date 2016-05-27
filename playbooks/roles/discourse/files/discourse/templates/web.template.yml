@@ -3,9 +3,10 @@ env:
   RAILS_ENV: 'production'
   UNICORN_WORKERS: 3
   UNICORN_SIDEKIQS: 1
-  # this gives us very good cache coverage, 96 -> 99
-  # in practice it is 1-2% perf improvement
-  RUBY_GLOBAL_METHOD_CACHE_SIZE: 131072
+  # slightly less aggressive than "recommendation" but works fine with oobgc
+  RUBY_GC_MALLOC_LIMIT: 40000000
+  # this ensures we have enough heap space to handle a big pile of small reqs
+  RUBY_HEAP_MIN_SLOTS: 800000
 
   DISCOURSE_DB_SOCKET: /var/run/postgresql
   DISCOURSE_DB_HOST:
@@ -27,14 +28,9 @@ run:
       to: |
         <policymap>
           <policy domain="coder" rights="none" pattern="EPHEMERAL" />
-          <policy domain="coder" rights="none" pattern="URL" />
           <policy domain="coder" rights="none" pattern="HTTPS" />
           <policy domain="coder" rights="none" pattern="MVG" />
           <policy domain="coder" rights="none" pattern="MSL" />
-          <policy domain="coder" rights="none" pattern="TEXT" />
-          <policy domain="coder" rights="none" pattern="SHOW" />
-          <policy domain="coder" rights="none" pattern="WIN" />
-          <policy domain="coder" rights="none" pattern="PLT" />
 
   - exec: /usr/local/bin/ruby -e 'if ENV["DISCOURSE_SMTP_ADDRESS"] == "smtp.example.com"; puts "Aborting! Mail is not configured!"; exit 1; end'
   - exec: /usr/local/bin/ruby -e 'if ENV["DISCOURSE_HOSTNAME"] == "discourse.example.com"; puts "Aborting! Domain is not configured!"; exit 1; end'

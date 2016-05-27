@@ -1,16 +1,6 @@
 #!/bin/bash
 
 ##
-## Make sure only root can run our script
-##
-check_root() {
-  if [[ $EUID -ne 0 ]]; then
-    echo "This script must be run as root. Please sudo or log in as root first." 1>&2
-    exit 1
-  fi
-}
-
-##
 ## Do we have enough memory and disk space for Discourse?
 ##
 check_disk_and_memory() {
@@ -28,13 +18,13 @@ check_disk_and_memory() {
   if [ "$avail_mem" -lt 1800 ]; then
     total_swap="$(LANG=C free -m | grep ^Swap: | awk '{print $2}')"
     if [ "$total_swap" -lt 1000 ]; then
-      echo "WARNING: Discourse requires at least 2GB of swap when running with less "
+      echo "WARNING: Discourse requires at least 1GB of swap when running with less "
       echo "than 2GB of RAM. This system does not appear to have sufficient swap space."
       echo
       echo "Without sufficient swap space, your site may not work properly, and future"
       echo "upgrades of Discourse may not complete successfully."
       echo
-      read -p "ENTER to create a 2GB swapfile now, or Ctrl+C to exit"
+      read -p "ENTER to create a 2GB swapfile automatically, or Ctrl-C to exit"
       
       ##
       ## derived from https://meta.discourse.org/t/13880
@@ -43,9 +33,9 @@ check_disk_and_memory() {
       dd if=/dev/zero of=/swapfile bs=1k count=2048k
       mkswap /swapfile
       swapon /swapfile
-      echo "/swapfile       swap    swap    auto      0       0" | tee -a /etc/fstab
-      sysctl -w vm.swappiness=10
-      echo vm.swappiness = 10 | tee -a /etc/sysctl.conf
+      echo "/swapfile       swap    swap    auto      0       0" | sudo tee -a /etc/fstab
+      sudo sysctl -w vm.swappiness=10
+      echo vm.swappiness = 10 | sudo tee -a /etc/sysctl.conf
 
       total_swap="$(LANG=C free -m | grep ^Swap: | awk '{print $2}')"
       if [ "$total_swap" -lt 1000 ]; then
@@ -163,8 +153,7 @@ ask_user_for_config() {
   local hostname="discourse.example.com"
   local developer_emails="me@example.com,you@example.com"
   local smtp_address="smtp.example.com"
-  local smtp_port="587"
-  local smtp_user_name="postmaster@discourse.example.com"  
+  local smtp_user_name="postmaster@discourse.example.com"
   local smtp_password=""
   local letsencrypt_account_email="me@example.com"
   local letsencrypt_status="ENTER to skip"
@@ -204,29 +193,14 @@ ask_user_for_config() {
       fi
     fi
     
-    if [ ! -z $smtp_port ]
-    then
-      read -p "SMTP port? [$smtp_port]: " new_value
-      if [ ! -z $new_value ]
-      then
-        smtp_port=$new_value
-      fi
-    fi
-    
-    ##
-    ## automatically set correct user name based on common mail providers
-    ##
     if [ "$smtp_address" == "smtp.sparkpostmail.com" ]
     then
     	smtp_user_name="SMTP_Injection"
-    fi    
+    fi
+    
     if [ "$smtp_address" == "smtp.sendgrid.net" ]
     then
 	    smtp_user_name="apikey"
-    fi
-    if [ "$smtp_address" == "smtp.mailgun.org" ]
-    then
-	    smtp_user_name="postmaster@$hostname"
     fi
     
     if [ ! -z $smtp_user_name ]
@@ -263,7 +237,6 @@ ask_user_for_config() {
     echo "Hostname      : $hostname"
     echo "Email         : $developer_emails"
     echo "SMTP address  : $smtp_address"
-    echo "SMTP port     : $smtp_port"
     echo "SMTP username : $smtp_user_name"
     echo "SMTP password : $smtp_password"
     
@@ -273,7 +246,7 @@ ask_user_for_config() {
     fi
     
     echo ""
-    read -p "ENTER to continue, 'n' to try again, Ctrl+C to exit: " config_ok
+    read -p "ENTER to continue, 'n' to try again, or ^C to exit: " config_ok
   done
 
   sed -i -e "s/^  DISCOURSE_HOSTNAME:.*/  DISCOURSE_HOSTNAME: $hostname/w $changelog" $config_file
@@ -300,15 +273,6 @@ ask_user_for_config() {
     rm $changelog
   else
     echo "DISCOURSE_SMTP_ADDRESS change failed."
-    update_ok="n"
-  fi
-
-  sed -i -e "s/^  #DISCOURSE_SMTP_PORT:.*/  DISCOURSE_SMTP_PORT: $smtp_port/w $changelog" $config_file
-  if [ -s $changelog ]
-  then
-    rm $changelog
-  else
-    echo "DISCOURSE_SMTP_PORT change failed."
     update_ok="n"
   fi
 
@@ -425,7 +389,6 @@ changelog=/tmp/changelog
 ##
 ## Check requirements before creating a copy of a config file we won't edit
 ##
-check_root
 check_disk_and_memory
 check_ports
 

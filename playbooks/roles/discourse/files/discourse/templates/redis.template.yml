@@ -34,11 +34,6 @@ run:
 
   - replace:
       filename: "/etc/redis/redis.conf"
-      from: /^bind .*$/
-      to: ""
-
-  - replace:
-      filename: "/etc/redis/redis.conf"
       from: /^dir .*$/
       to: "dir /shared/redis_data"
 

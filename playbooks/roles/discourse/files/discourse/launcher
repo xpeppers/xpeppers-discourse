@@ -60,7 +60,7 @@ git_rec_version='1.8.0'
 config_file=containers/"$config".yml
 cidbootstrap=cids/"$config"_bootstrap.cid
 local_discourse=local_discourse
-image=discourse/discourse:1.3.3
+image=discourse/discourse:1.0.17
 docker_path=`which docker.io || which docker`
 git_path=`which git`
 
@@ -495,19 +495,9 @@ run_bootstrap() {
 
   echo $run_command
 
-  unset ERR
-  (exec echo "$input" | $docker_path run $user_args $links "${env[@]}" -e DOCKER_HOST_IP=$docker_ip --cidfile $cidbootstrap -i -a stdin -a stdout -a stderr $volumes $image \
-    /bin/bash -c "$run_command") || ERR=$?
-
   unset FAILED
-  # magic exit code that indicates a retry
-  if [[ "$ERR" == 77 ]]; then
-    $docker_path rm `cat $cidbootstrap`
-    rm $cidbootstrap
-    exit 77
-  elif [[ "$ERR" > 0 ]]; then
-    FAILED=TRUE
-  fi
+  (exec echo "$input" | $docker_path run $user_args $links "${env[@]}" -e DOCKER_HOST_IP=$docker_ip --cidfile $cidbootstrap -i -a stdin -a stdout -a stderr $volumes $image \
+     /bin/bash -c "$run_command") || FAILED="TRUE"
 
   if [[ $FAILED = "TRUE" ]]; then
     if [[ ! -z "$DEBUG" ]]; then
