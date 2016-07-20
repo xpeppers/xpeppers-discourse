@@ -493,11 +493,25 @@ run_bootstrap() {
   fi
   run_command="$run_command /pups/bin/pups --stdin"
 
+  echo "input: "
+  echo $input
+  echo "run_command: "
   echo $run_command
 
-  unset FAILED
+
+  unset ERR
   (exec echo "$input" | $docker_path run $user_args $links "${env[@]}" -e DOCKER_HOST_IP=$docker_ip --cidfile $cidbootstrap -i -a stdin -a stdout -a stderr $volumes $image \
-     /bin/bash -c "$run_command") || FAILED="TRUE"
+    /bin/bash -c "$run_command") || ERR=$?
+
+  unset FAILED
+  # magic exit code that indicates a retry
+  if [[ "$ERR" == 77 ]]; then
+    $docker_path rm `cat $cidbootstrap`
+    rm $cidbootstrap
+    exit 77
+  elif [[ "$ERR" > 0 ]]; then
+    FAILED=TRUE
+  fi
 
   if [[ $FAILED = "TRUE" ]]; then
     if [[ ! -z "$DEBUG" ]]; then
@@ -559,7 +573,7 @@ case "$command" in
         git remote update
 
         LOCAL=$(git rev-parse @)
-        REMOTE=$(git rev-parse @{u})
+        REMOTE=$(git rev-parse @)
         BASE=$(git merge-base @ @{u})
 
         if [ $LOCAL = $REMOTE ]; then

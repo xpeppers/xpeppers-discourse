@@ -97,8 +97,8 @@ run:
         - git clean -f
         - git remote set-branches --add origin master
         - git pull
-        - git fetch origin $version
-        - git checkout $version
+        - git fetch origin master
+        - git checkout ec4a7d708dde7a2c508cb5941a6c0fe7b0d30c6d
         - mkdir -p tmp/pids
         - mkdir -p tmp/sockets
         - touch tmp/.gitkeep
