@@ -5,7 +5,6 @@
   with_items:
     - fail2ban
     - ufw
-    - language-pack-UTF-8
 
 - name: ensure fail2ban is running
   sudo: yes
