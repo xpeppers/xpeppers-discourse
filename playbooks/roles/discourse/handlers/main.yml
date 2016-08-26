@@ -32,8 +32,8 @@
 - name: rebuild discourse
   command: "{{ item }}"
   with_items:
-    - ./launcher rebuild web_only
     - ./launcher rebuild data
+    - ./launcher rebuild web_only
   args:
     chdir: /var/discourse
   ignore_errors: yes

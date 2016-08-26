@@ -76,3 +76,4 @@
   when: true
   notify:
     - rebuild discourse
+    - start discourse
