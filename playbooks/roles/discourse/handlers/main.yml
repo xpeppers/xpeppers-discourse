@@ -1,6 +1,9 @@
 ---
 - name: stop discourse
-  command: "./launcher stop data && ./launcher stop web_only"
+  command: "{{ item }}"
+  with_items:
+    - ./launcher stop web_only
+    - ./launcher stop data
   args:
     chdir: /var/discourse
   ignore_errors: yes
@@ -8,28 +11,39 @@
   sudo: yes
 
 - name: start discourse
-  command: "./launcher start data && ./launcher start web_only"
+  command: "{{ item }}"
+  with_items:
+    - ./launcher start data
+    - ./launcher start web_only
   args:
     chdir: /var/discourse
   ignore_errors: yes
   sudo: yes
 
 - name: restart discourse
-  command: "./launcher restart data && ./launcher restart web_only"
+  command: "{{ item }}"
+  with_items:
+    - ./launcher restart web_only
   args:
     chdir: /var/discourse
   ignore_errors: yes
   sudo: yes
 
 - name: rebuild discourse
-  command: "./launcher rebuild data && ./launcher rebuild web_only"
+  command: "{{ item }}"
+  with_items:
+    - ./launcher rebuild web_only
+    - ./launcher rebuild data
   args:
     chdir: /var/discourse
   ignore_errors: yes
   sudo: yes
 
 - name: bootstrap discourse
-  command: "./launcher bootstrap data && ./launcher bootstrap web_only"
+  command: "{{ item }}"
+  with_items:
+    - ./launcher bootstrap data
+    - ./launcher bootstrap web_only
   args:
     chdir: /var/discourse
   sudo: yes
