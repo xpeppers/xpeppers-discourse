@@ -7,7 +7,7 @@ usage () {
   echo "    stop:       Stop a running container"
   echo "    restart:    Restart a container"
   echo "    destroy:    Stop and remove a container"
-  echo "    enter:      Use nsenter to get a shell into a container"
+  echo "    enter:      Open a shell to run commands inside the container"
   echo "    logs:       View the Docker logs for a container"
   echo "    bootstrap:  Bootstrap a container for the config based on a template"
   echo "    rebuild:    Rebuild a container (destroy old, bootstrap, start new)"
@@ -16,6 +16,7 @@ usage () {
   echo "Options:"
   echo "    --skip-prereqs             Don't check launcher prerequisites"
   echo "    --docker-args              Extra arguments to pass when running docker"
+  echo "    --skip-mac-address         Don't assign a mac address"
   exit 1
 }
 
@@ -30,6 +31,9 @@ while [ ${#} -gt 0 ]; do
     ;;
   --skip-prereqs)
     SKIP_PREREQS="1"
+    ;;
+  --skip-mac-address)
+    SKIP_MAC_ADDRESS="1"
     ;;
   --docker-args)
     user_args="$2"
@@ -60,7 +64,7 @@ git_rec_version='1.8.0'
 config_file=containers/"$config".yml
 cidbootstrap=cids/"$config"_bootstrap.cid
 local_discourse=local_discourse
-image=discourse/discourse:1.0.17
+image=discourse/discourse:1.3.5
 docker_path=`which docker.io || which docker`
 git_path=`which git`
 
@@ -240,10 +244,30 @@ set_links() {
         "require 'yaml'; puts YAML.load(STDIN.readlines.join)['links'].map{|l| '--link ' << l['link']['name'] << ':' << l['link']['alias'] << ' '}.join"`
 }
 
-set_template_info() {
-
-    templates=`cat $config_file | $docker_path run $user_args --rm -i -a stdin -a stdout $image ruby -e \
+find_templates() {
+    local templates=`cat $1 | $docker_path run $user_args --rm -i -a stdin -a stdout $image ruby -e \
       "require 'yaml'; puts YAML.load(STDIN.readlines.join)['templates']"`
+
+    local arrTemplates=${templates// / }
+
+    if [ ! -z "$templates" ]; then
+      for template in "${arrTemplates[@]}"
+      do
+        local nested_templates=$(find_templates $template)
+
+        if [ ! -z "$nested_templates" ]; then
+          templates="$templates $nested_templates"
+        fi
+      done
+
+      echo $templates
+    else
+      echo ""
+    fi
+}
+
+set_template_info() {
+    templates=$(find_templates $config_file)
 
     arrTemplates=(${templates// / })
     config_data=$(cat $config_file)
@@ -448,7 +472,10 @@ run_start() {
      # docker added more hostname rules
      hostname=${hostname//_/-}
 
-     mac_address="--mac-address $($docker_path run $user_args -i --rm -a stdout -a stderr $image /bin/sh -c "echo $hostname | md5sum | sed 's/^\(..\)\(..\)\(..\)\(..\)\(..\).*$/02:\1:\2:\3:\4:\5/'")"
+
+     if [ -z "$SKIP_MAC_ADDRESS" ] ; then
+      mac_address="--mac-address $($docker_path run $user_args -i --rm -a stdout -a stderr $image /bin/sh -c "echo $hostname | md5sum | sed 's/^\(..\)\(..\)\(..\)\(..\)\(..\).*$/02:\1:\2:\3:\4:\5/'")"
+     fi
 
      set -x
      $docker_path run $user_args $links $attach_on_run $restart_policy "${env[@]}" -h "$hostname" \
@@ -495,9 +522,19 @@ run_bootstrap() {
 
   echo $run_command
 
-  unset FAILED
+  unset ERR
   (exec echo "$input" | $docker_path run $user_args $links "${env[@]}" -e DOCKER_HOST_IP=$docker_ip --cidfile $cidbootstrap -i -a stdin -a stdout -a stderr $volumes $image \
-     /bin/bash -c "$run_command") || FAILED="TRUE"
+    /bin/bash -c "$run_command") || ERR=$?
+
+  unset FAILED
+  # magic exit code that indicates a retry
+  if [[ "$ERR" == 77 ]]; then
+    $docker_path rm `cat $cidbootstrap`
+    rm $cidbootstrap
+    exit 77
+  elif [[ "$ERR" > 0 ]]; then
+    FAILED=TRUE
+  fi
 
   if [[ $FAILED = "TRUE" ]]; then
     if [[ ! -z "$DEBUG" ]]; then

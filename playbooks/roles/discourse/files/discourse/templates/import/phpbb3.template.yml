@@ -19,14 +19,6 @@ hooks:
           - rm 02-unicorn
 
     - file:
-        path: /etc/apt/sources.list.d/mariadb.list
-        contents: |
-          # MariaDB 10.1 repository list
-          # http://mariadb.org/mariadb/repositories/
-          deb [arch=amd64,i386] http://nyc2.mirrors.digitalocean.com/mariadb/repo/10.1/ubuntu trusty main
-          deb-src http://nyc2.mirrors.digitalocean.com/mariadb/repo/10.1/ubuntu trusty main
-
-    - file:
         path: /etc/apt/preferences.d/mariadb
         contents: |
           Package: *
@@ -41,6 +33,7 @@ hooks:
           default-storage-engine=MyISAM
           default-tmp-storage-engine=MyISAM
           innodb=OFF
+          sql_mode=NO_AUTO_CREATE_USER
 
           datadir=/shared/import/mysql/data
 
@@ -50,7 +43,8 @@ hooks:
     - exec:
         cmd:
           - mkdir -p /shared/import/mysql/data
-          - apt-key adv --recv-keys --keyserver hkp://keyserver.ubuntu.com:80 0xcbcb082a1bb943db
+          - apt-key adv --recv-keys --keyserver hkp://keyserver.ubuntu.com:80 0xF1656F24C74CD1D8
+          - add-apt-repository 'deb [arch=amd64,i386] http://nyc2.mirrors.digitalocean.com/mariadb/repo/10.1/ubuntu xenial main'
           - apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y nano libmariadbclient-dev mariadb-server
           - sed -Ei 's/^log/#&/' /etc/mysql/my.cnf
 
@@ -80,16 +74,23 @@ hooks:
         chmod: "+x"
         contents: |
           #!/bin/bash
+          set -e
+
           chown discourse /shared/import/settings.yml
           chown discourse -R /shared/import/data
 
           if [ -f "/shared/import/data/phpbb_mysql.sql" ]; then
+            if [ -f "/shared/import/mysql/imported" ] && ! sha256sum --check /shared/import/mysql/imported &>/dev/null ; then
+              echo "Checksum of database dump changed..."
+              rm /shared/import/mysql/imported
+            fi
+
             if [ ! -f "/shared/import/mysql/imported" ]; then
               echo "Loading database dump into MySQL..."
               mysql -uroot -e "DROP DATABASE IF EXISTS phpbb"
               mysql -uroot -e "CREATE DATABASE phpbb"
               mysql -uroot --default-character-set=utf8 --database=phpbb < /shared/import/data/phpbb_mysql.sql
-              touch /shared/import/mysql/imported
+              sha256sum /shared/import/data/phpbb_mysql.sql > /shared/import/mysql/imported
             fi
           else
             sv stop mysql

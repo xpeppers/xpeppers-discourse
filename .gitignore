@@ -1,4 +1,6 @@
 .vagrant
 playbooks/roles/discourse/files/app.yml
+playbooks/roles/discourse/files/data.yml
+playbooks/roles/discourse/files/web_only.yml
 playbooks/roles/discourse/files/ssl.crt
 playbooks/roles/discourse/files/ssl.key

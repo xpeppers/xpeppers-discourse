@@ -1,6 +1,6 @@
 ---
 - name: stop discourse
-  command: ./launcher stop app
+  command: "./launcher stop data && ./launcher stop web_only"
   args:
     chdir: /var/discourse
   ignore_errors: yes
@@ -8,28 +8,28 @@
   sudo: yes
 
 - name: start discourse
-  command: ./launcher start app
+  command: "./launcher start data && ./launcher start web_only"
   args:
     chdir: /var/discourse
   ignore_errors: yes
   sudo: yes
 
 - name: restart discourse
-  command: ./launcher restart app
+  command: "./launcher restart data && ./launcher restart web_only"
   args:
     chdir: /var/discourse
   ignore_errors: yes
   sudo: yes
 
 - name: rebuild discourse
-  command: ./launcher rebuild app
+  command: "./launcher rebuild data && ./launcher rebuild web_only"
   args:
     chdir: /var/discourse
   ignore_errors: yes
   sudo: yes
 
 - name: bootstrap discourse
-  command: ./launcher bootstrap app
+  command: "./launcher bootstrap data && ./launcher bootstrap web_only"
   args:
     chdir: /var/discourse
   sudo: yes

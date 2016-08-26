@@ -39,7 +39,8 @@ Install the ansible roles:
 Configure Discourse with
 
 ```
-cp playbooks/roles/discourse/files/discourse/samples/standalone.yml playbooks/roles/discourse/files/app.yml
+cp playbooks/roles/discourse/files/discourse/samples/web_only.yml playbooks/roles/discourse/files/web.yml
+cp playbooks/roles/discourse/files/discourse/samples/data.yml playbooks/roles/discourse/files/data.yml
 ```
 
 and edit this file according to your configuration.
