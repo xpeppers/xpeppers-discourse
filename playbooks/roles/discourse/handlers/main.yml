@@ -6,7 +6,7 @@
     - ./launcher stop data
   args:
     chdir: /var/discourse
-  ignore_errors: yes
+  # ignore_errors: yes
   register: stopped_discourse
   sudo: yes
 
@@ -17,7 +17,7 @@
     - ./launcher start web_only
   args:
     chdir: /var/discourse
-  ignore_errors: yes
+  # ignore_errors: yes
   sudo: yes
 
 - name: restart discourse
@@ -26,17 +26,19 @@
     - ./launcher restart web_only
   args:
     chdir: /var/discourse
-  ignore_errors: yes
+  # ignore_errors: yes
   sudo: yes
 
 - name: rebuild discourse
   command: "{{ item }}"
   with_items:
+    - ./launcher stop web_only
+    - ./launcher stop data
     - ./launcher rebuild data
     - ./launcher rebuild web_only
   args:
     chdir: /var/discourse
-  ignore_errors: yes
+  # ignore_errors: yes
   sudo: yes
 
 - name: bootstrap discourse
