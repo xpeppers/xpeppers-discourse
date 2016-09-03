@@ -52,9 +52,6 @@
 - name: copy discourse source
   synchronize: src=discourse dest=/var/
 
-- name: copy discourse configuration data.yml
-  copy: src=data.yml dest=/var/discourse/containers/data.yml owner=discourse group=sudo
-
 - name: copy discourse configuration web_only.yml
   copy: src=web_only.yml dest=/var/discourse/containers/web_only.yml owner=discourse group=sudo
 
