@@ -3,10 +3,9 @@ env:
   RAILS_ENV: 'production'
   UNICORN_WORKERS: 3
   UNICORN_SIDEKIQS: 1
-  # slightly less aggressive than "recommendation" but works fine with oobgc
-  RUBY_GC_MALLOC_LIMIT: 40000000
-  # this ensures we have enough heap space to handle a big pile of small reqs
-  RUBY_HEAP_MIN_SLOTS: 800000
+  # this gives us very good cache coverage, 96 -> 99
+  # in practice it is 1-2% perf improvement
+  RUBY_GLOBAL_METHOD_CACHE_SIZE: 131072
 
   DISCOURSE_DB_SOCKET: /var/run/postgresql
   DISCOURSE_DB_HOST:
@@ -28,13 +27,27 @@ run:
       to: |
         <policymap>
           <policy domain="coder" rights="none" pattern="EPHEMERAL" />
+          <policy domain="coder" rights="none" pattern="URL" />
           <policy domain="coder" rights="none" pattern="HTTPS" />
           <policy domain="coder" rights="none" pattern="MVG" />
           <policy domain="coder" rights="none" pattern="MSL" />
+          <policy domain="coder" rights="none" pattern="TEXT" />
+          <policy domain="coder" rights="none" pattern="SHOW" />
+          <policy domain="coder" rights="none" pattern="WIN" />
+          <policy domain="coder" rights="none" pattern="PLT" />
 
   - exec: /usr/local/bin/ruby -e 'if ENV["DISCOURSE_SMTP_ADDRESS"] == "smtp.example.com"; puts "Aborting! Mail is not configured!"; exit 1; end'
   - exec: /usr/local/bin/ruby -e 'if ENV["DISCOURSE_HOSTNAME"] == "discourse.example.com"; puts "Aborting! Domain is not configured!"; exit 1; end'
   - exec: chown -R discourse /home/discourse
+  # TODO: move to base image (anacron can not be fired up using rc.d)
+  - exec: rm -f /etc/cron.d/anacron
+  - file:
+     path: /etc/cron.d/anacron
+     contents: |
+        SHELL=/bin/sh
+        PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+
+        30 7    * * *   root	/usr/sbin/anacron -s >/dev/null
   - file:
      path: /etc/runit/1.d/copy-env
      chmod: "+x"
@@ -45,15 +58,24 @@ run:
 
         # find DISCOURSE_ env vars, strip the leader, lowercase the key
         /usr/local/bin/ruby -e 'ENV.each{|k,v| puts "#{$1.downcase} = #{v}" if k =~ /^DISCOURSE_(.*)/}' > $conf
+  - file:
+     path: /etc/runit/1.d/00-fix-log-permissions
+     chmod: "+x"
+     contents: |
+       #!/bin/bash
+       mkdir -p /var/log/nginx
+       chown -R www-data:www-data /var/log/nginx
+       chown www-data:www-data /var/log/nginx
+       chown -f syslog:adm /var/log/syslog*
+       chown -f syslog:adm /var/log/auth.log*
+       chown -f syslog:adm /var/log/kern.log*
 
   - file:
-     path: /etc/runit/1.d/ensure-web-nginx-read
+     path: /etc/runit/1.d/enable-brotli
      chmod: "+x"
      contents: |
         #!/bin/bash
-        mkdir -p /var/log/nginx
-        chgrp -R www-data /var/log/nginx
-        chgrp www-data /var/log/nginx
+        [ ! -z "$COMPRESS_BROTLI" ] && sed -i "s/. brotli/  brotli/" /etc/nginx/conf.d/discourse.conf || sed -i "s/. brotli/# brotli/" /etc/nginx/conf.d/discourse.conf
 
   - file:
      path: /etc/service/unicorn/run

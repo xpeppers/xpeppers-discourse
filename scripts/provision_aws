@@ -5,6 +5,17 @@ if [ -z "$PEM" ];then
   PEM="~/.ssh/xpeppers/discourse.pem"
 fi
 
+
+read -r -p "Did you 'git pull' in 'playbooks/roles/discourse/files/discourse'? [y/N] " response
+if [[ $response =~ ^([yY][eE][sS]|[yY])$ ]]
+then
+  echo "Alright, let's do this!"
+else
+  echo "Please update the discourse source..."
+  exit 1
+fi
+
+
 ansible-playbook playbooks/main.yml\
   -i inventory/aws_hosts\
   --private-key "$PEM"\
