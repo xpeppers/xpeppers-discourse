@@ -2,7 +2,5 @@
 - hosts: all
   sudo: yes
   roles:
-    - resmo.ntp
-    - geerlingguy.firewall
-    - angstwad.docker_ubuntu
+    - machine
     - discourse
