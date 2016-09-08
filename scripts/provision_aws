@@ -1,17 +1,19 @@
 #!/bin/sh
 
+set -e
+
 PEM=$1
 if [ -z "$PEM" ];then
   PEM="~/.ssh/xpeppers/discourse.pem"
 fi
 
-
-read -r -p "Did you 'git pull' in 'playbooks/roles/discourse/files/discourse'? [y/N] " response
-if [[ $response =~ ^([yY][eE][sS]|[yY])$ ]]
+discourse_up_to_date=$(cd playbooks/roles/discourse/files/discourse; git status -uno | grep up-to-date)
+if [[ $discourse_up_to_date = "Your branch is up-to-date with 'origin/master'." ]]
 then
-  echo "Alright, let's do this!"
+  echo "Discourse is up to date, let's do this!"
 else
   echo "Please update the discourse source..."
+  echo "'git pull' in 'playbooks/roles/discourse/files/discourse'"
   exit 1
 fi
 
