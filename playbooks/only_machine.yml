@@ -1,5 +1,10 @@
 ---
 - hosts: all
   sudo: yes
+  vars_files:
+    - vars/main.yml
   roles:
+    - geerlingguy.firewall
+    - geerlingguy.ntp
+    - angstwad.docker_ubuntu
     - machine

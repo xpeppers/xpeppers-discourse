@@ -1,0 +1,9 @@
+---
+ntp_timezone: Europe/CEST
+ntp_enabled: true
+ntp_manage_config: false
+ntp_servers:
+  - 0.pool.ntp.org iburst
+  - 1.pool.ntp.org iburst
+  - 2.pool.ntp.org iburst
+  - 3.pool.ntp.org iburst
