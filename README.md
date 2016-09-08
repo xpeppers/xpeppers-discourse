@@ -60,11 +60,15 @@ Place the production ssl key and certificate under `playbooks/roles/discourse/fi
 Provision with
 
 ```
+# Vagrant host
 scripts/provision_vagrant
+# or
+scripts/provision_vagrant_only_machine
 
-# or
-
+# AWS host
 scripts/provision_aws
+# or
+scripts/provision_aws_only_machine
 ```
 
 ### Gather info about the machine
