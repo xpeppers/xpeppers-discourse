@@ -40,9 +40,10 @@ Configure Discourse with
 
 ```
 cp playbooks/roles/discourse/files/discourse/samples/standalone.yml playbooks/roles/discourse/files/app.yml
+cp playbooks/roles/discourse/files/backup.cron.template.sh playbooks/roles/discourse/files/backup.cron.sh
 ```
 
-and edit this file according to your configuration.
+and edit the files according to your configuration.
 
 *Note: Ansible keeps track of changes to this file, and rebuilds the discourse installation accordinglt, as described [here](https://github.com/discourse/discourse/blob/master/docs/INSTALL-cloud.md#email-is-important)*
 

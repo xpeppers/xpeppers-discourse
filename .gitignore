@@ -3,3 +3,4 @@ playbooks/roles/discourse/files/app.yml
 playbooks/roles/discourse/files/*.yml
 playbooks/roles/discourse/files/ssl.crt
 playbooks/roles/discourse/files/ssl.key
+playbooks/roles/discourse/files/backup.cron.sh
