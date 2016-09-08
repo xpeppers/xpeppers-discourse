@@ -71,6 +71,13 @@ scripts/provision_aws
 scripts/provision_aws_only_machine
 ```
 
+### Backup Discourse
+
+```
+scripts/cmd_aws "sudo sh /home/discourse/backup.cron.sh"
+```
+
+
 ### Gather info about the machine
 
 ```
