@@ -55,6 +55,10 @@ Place the production ssl key and certificate under `playbooks/roles/discourse/fi
 
 `ssl.key` and `ssl.crt`
 
+**XPeppers SSH Key**
+
+Grab the PEM for XPeppers discourse from a coworker. Place it in `~/.ssh/xpeppers/discourse.pem`
+
 ---
 
 Provision with
