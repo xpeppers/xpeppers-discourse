@@ -1,5 +1,5 @@
 ---
-ntp_timezone: Europe/CEST
+ntp_timezone: Europe/CET
 ntp_enabled: true
 ntp_manage_config: false
 ntp_servers:

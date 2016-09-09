@@ -2,64 +2,57 @@
 
 example repo to provision of a machine to host the discourse platform
 
-## Requirements
+
+
+### Requirements
 
 - vagrant (tested with *1.8.1*)
 - Ansible (tested with *1.9.3*)
 
 
-## Installation
 
-Add an entry to your hosts file that maps the domain `discourse.dev` to the IP of the virtual machine:
+# Basic Setup
+
+1) Add an entry to your `/etc/hosts` file that maps the domain `discourse.dev` to the IP of the virtual machine:
 
 ```
 192.168.11.3    discourse.dev
 ```
 
----
-
-Create the virtual machine with vagrant:
+2) Start the virtual machine with vagrant:
 
 ```
 vagrant up
 ```
 
----
-
-Install the ansible roles:
+3) Install the ansible roles (execute from the host machine):
 
 ```
 [sudo] ansible-galaxy install -r requirements.yml
 ```
 
----
-
-**IMPORTANT:**
-
-Configure Discourse with
+4) Configure Discourse (from the host machine)
 
 ```
 cp playbooks/roles/discourse/files/discourse/samples/standalone.yml playbooks/roles/discourse/files/app.yml
 cp playbooks/roles/discourse/files/backup.cron.template.sh playbooks/roles/discourse/files/backup.cron.sh
 ```
 
-and edit the files according to your configuration.
+5) Edit the files accordingly to your setup (hostname, stmp settings, etc.)
 
-*Note: Ansible keeps track of changes to this file, and rebuilds the discourse installation accordinglt, as described [here](https://github.com/discourse/discourse/blob/master/docs/INSTALL-cloud.md#email-is-important)*
+5a) For the development machine setup with vagrant, comment the line with `templates/web.ssl.template.yml` in `app.yml` to disable HTTPS
 
----
+5b) For the production machine setup, if you are using HTTPS, place the SSL key and certificate under `playbooks/roles/discourse/files/` and name the files `ssl.key` and `ssl.crt`
 
-**This is a required step to provision the production machine**
+6) *Optional*: Configure the backup script and edit the file accordingly to your configuration:
 
-Place the production ssl key and certificate under `playbooks/roles/discourse/files/` with the names:
+```
+cp playbooks/roles/discourse/files/backup.cron.template.sh playbooks/roles/discourse/files/backup.cron.sh
+```
 
-`ssl.key` and `ssl.crt`
 
-**XPeppers SSH Key**
 
-Grab the PEM for XPeppers discourse from a coworker. Place it in `~/.ssh/xpeppers/discourse.pem`
-
----
+# Provisioning
 
 Provision with
 
@@ -75,11 +68,19 @@ scripts/provision_aws
 scripts/provision_aws_only_machine
 ```
 
-### Backup Discourse
+
+# Utility scripts
+
+### Manual/Automatic Backups
+
+Run this command to trigger a backup:
 
 ```
 scripts/cmd_aws "sudo sh /home/discourse/backup.cron.sh"
 ```
+
+Additionally there is a cron configured that runs automatic backups at 9:00, 14:00 and 20:00. For additional configuration see `playbooks/roles/discourse/tasks/main.yml`.
+
 
 
 ### Gather info about the machine
@@ -91,8 +92,6 @@ scripts/info_vagrant
 
 scripts/info_aws
 ```
-
-
 
 
 
@@ -108,10 +107,6 @@ scripts/logs_aws
 
 
 
-
-
-
-
 ### Execute arbitrary commands
 
 ```
@@ -123,8 +118,12 @@ scripts/cmd_aws [YOUR-PEM-LOCATION] "sudo docker ps"
 
 
 
-
-
 # Notes
 
 Ansibles `gather_facts` cannot be disabled.
+
+
+
+# (Un)License
+
+All information is public content.
