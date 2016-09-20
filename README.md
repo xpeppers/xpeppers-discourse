@@ -35,7 +35,7 @@ vagrant up
 
 ```
 cp playbooks/roles/discourse/files/discourse/samples/standalone.yml playbooks/roles/discourse/files/app.yml
-cp playbooks/roles/discourse/files/backup.cron.template.sh playbooks/roles/discourse/files/backup.cron.sh
+cp playbooks/roles/machine/files/backup.cron.template.sh playbooks/roles/machine/files/backup.cron.sh
 ```
 
 5) Edit the files accordingly to your setup (hostname, stmp settings, etc.)
@@ -47,7 +47,7 @@ cp playbooks/roles/discourse/files/backup.cron.template.sh playbooks/roles/disco
 6) *Optional*: Configure the backup script and edit the file accordingly to your configuration:
 
 ```
-cp playbooks/roles/discourse/files/backup.cron.template.sh playbooks/roles/discourse/files/backup.cron.sh
+cp playbooks/roles/machine/files/backup.cron.template.sh playbooks/roles/machine/files/backup.cron.sh
 ```
 
 
