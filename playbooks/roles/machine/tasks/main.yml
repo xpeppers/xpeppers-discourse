@@ -43,5 +43,5 @@
   ignore_errors: true
   copy: src=backup.cron.sh dest=/home/discourse/backup.cron.sh owner=discourse group=sudo
 
-# runs cron script @ 11,16,22:00 => 9,14,20:00 GMT+1
-- cron: name="run backup cron script" minute="0" hour="11,16,22" job="sh /home/discourse/backup.cron.sh"
+# runs cron script @ 10,16,22:00 => 8,14,20:00 GMT+1
+- cron: name="run backup cron script" minute="0" hour="10,16,22" job="sh /home/discourse/backup.cron.sh"
