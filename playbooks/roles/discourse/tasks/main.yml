@@ -38,13 +38,6 @@
   sudo: yes
   action: shell ufw status
 
-- name: copy backup cron script
-  sudo: yes
-  ignore_errors: true
-  copy: src=backup.cron.sh dest=/home/discourse/backup.cron.sh owner=discourse group=sudo
-
-- cron: name="run backup cron script" minute="0" hour="9,14,20" job="sh /home/discourse/backup.cron.sh"
-
 - name: add discourse user
   user: name=discourse groups=sudo,admin
 
