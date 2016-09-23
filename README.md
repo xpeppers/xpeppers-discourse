@@ -44,12 +44,7 @@ cp playbooks/roles/machine/files/backup.cron.template.sh playbooks/roles/machine
 
 5b) For the production machine setup, if you are using HTTPS, place the SSL key and certificate under `playbooks/roles/discourse/files/` and name the files `ssl.key` and `ssl.crt`
 
-6) *Optional*: Configure the backup script and edit the file accordingly to your configuration:
-
-```
-cp playbooks/roles/machine/files/backup.cron.template.sh playbooks/roles/machine/files/backup.cron.sh
-```
-
+6) Fill the API key in `backup.cron.sh` with the key you find here: https://<DISCOURSE_HOST>/admin/api/keys
 
 
 # Provisioning
