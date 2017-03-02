@@ -13,38 +13,44 @@ example repo to provision of a machine to host the discourse platform
 
 # Basic Setup
 
-1) Add an entry to your `/etc/hosts` file that maps the domain `discourse.dev` to the IP of the virtual machine:
+1) Clone this project (*important* with `--recursive`):
+
+```
+git clone git@github.com:xpeppers/ansible-discourse.git --recursive
+```
+
+2) Add an entry to your `/etc/hosts` file that maps the domain `discourse.dev` to the IP of the virtual machine:
 
 ```
 192.168.11.3    discourse.dev
 ```
 
-2) Start the virtual machine with vagrant:
+3) Start the virtual machine with vagrant:
 
 ```
 vagrant up
 ```
 
-3) Install the ansible roles (execute from the host machine):
+4) Install the ansible roles (execute from the host machine):
 
 ```
 [sudo] ansible-galaxy install -r requirements.yml
 ```
 
-4) Configure Discourse (from the host machine)
+5) Configure Discourse (from the host machine)
 
 ```
 cp playbooks/roles/discourse/files/discourse/samples/standalone.yml playbooks/roles/discourse/files/app.yml
 cp playbooks/roles/machine/files/backup.cron.template.sh playbooks/roles/machine/files/backup.cron.sh
 ```
 
-5) Edit the files accordingly to your setup (hostname, stmp settings, etc.)
+6) Edit the files accordingly to your setup (hostname, stmp settings, etc.)
 
-5a) For the development machine setup with vagrant, comment the line with `templates/web.ssl.template.yml` in `app.yml` to disable HTTPS
+6a) For the development machine setup with vagrant, comment the line with `templates/web.ssl.template.yml` in `app.yml` to disable HTTPS
 
-5b) For the production machine setup, if you are using HTTPS, place the SSL key and certificate under `playbooks/roles/discourse/files/` and name the files `ssl.key` and `ssl.crt`
+6b) For the production machine setup, if you are using HTTPS, place the SSL key and certificate under `playbooks/roles/discourse/files/` and name the files `ssl.key` and `ssl.crt`
 
-6) Fill the API key in `backup.cron.sh` with the key you find here: https://<DISCOURSE_HOST>/admin/api/keys
+7) Fill the API key in `backup.cron.sh` with the key you find here: https://<DISCOURSE_HOST>/admin/api/keys
 
 
 # Provisioning
