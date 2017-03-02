@@ -51,10 +51,12 @@
   register: discourse_running
 
 - name: copy discourse source
-  synchronize: src=discourse dest=/var/
+  synchronize: src=discourse dest=/var/ rsync_opts="--exclude=.git"
   notify:
     - stop discourse
     - rebuild discourse
+- name: Ensures /var/discourse/containers dir exists
+  file: path={{project_root}}/conf state=directory
 
 - name: copy discourse configuration app.yml
   copy: src=app.yml dest=/var/discourse/containers/app.yml owner=discourse group=sudo
