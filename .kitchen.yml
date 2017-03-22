@@ -1,0 +1,20 @@
+---
+
+driver:
+  name: docker
+
+platforms:
+  - name: "ubuntu-16.10"
+
+verifier:
+  name: busser
+  plugin:
+    - Ansiblespec
+
+suites:
+  - name: default
+    provisioner:
+      name: ansible_playbook
+      playbook: role.yml
+      additional_copy_path:
+        - "."

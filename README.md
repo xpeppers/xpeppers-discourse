@@ -1,13 +1,27 @@
 # ansible-discourse
 
-example repo to provision of a machine to host the discourse platform
+## Requirements
+
+- Vagrant
+
+
+# Development
+
+## Requirements
+
+- Ruby 2.3.x (& bundle)
+
+- Python 2.x
+
+
+## Installation
+
+```
+bundle install # install dependencies for Chef Test Kitchen
+```
 
 
 
-### Requirements
-
-- vagrant (tested with *1.8.1*)
-- Ansible (tested with *1.9.3*)
 
 
 
