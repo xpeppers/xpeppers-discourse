@@ -1,3 +1,0 @@
-[submodule "playbooks/roles/discourse/files/discourse"]
-	path = playbooks/roles/discourse/files/discourse
-	url = git@github.com:discourse/discourse_docker.git
