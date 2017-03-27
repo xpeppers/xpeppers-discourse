@@ -1,0 +1,26 @@
+[
+  {
+    "ParameterKey": "VpcId",
+    "ParameterValue": "vpc-c9ee2dad"
+  },
+  {
+    "ParameterKey": "SubnetId",
+    "ParameterValue": "subnet-d7b45d8f"
+  },
+  {
+    "ParameterKey": "InstanceName",
+    "ParameterValue": "discourse-test"
+  },
+  {
+    "ParameterKey": "SshCidrAllow",
+    "ParameterValue": "0.0.0.0/0"
+  },
+  {
+    "ParameterKey": "InstanceType",
+    "ParameterValue": "t2.small"
+  },
+  {
+    "ParameterKey": "KeyName",
+    "ParameterValue": "discourse-test"
+  }
+]
