@@ -73,6 +73,8 @@ Provision with
 scripts/provision_vagrant
 # or
 scripts/provision_vagrant_only_machine
+# or
+scripts/provision_vagrant_only_discourse
 
 # AWS host
 scripts/provision_aws
