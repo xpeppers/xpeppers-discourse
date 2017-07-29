@@ -34,10 +34,6 @@
     chdir: /var/discourse
   sudo: yes
 
-- name: restart ssh
-  sudo: yes
-  action: service name=ssh state=restarted enabled=yes
-
 - name: reload systemd
   sudo: yes
   command: systemctl daemon-reload

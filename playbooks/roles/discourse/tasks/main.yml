@@ -1,43 +1,4 @@
 ---
-- name: install apt packages
-  apt: pkg={{ item }} state=latest
-  sudo: yes
-  with_items:
-    - fail2ban
-    - ufw
-    - git
-    - htop
-
-- name: ensure fail2ban is running
-  sudo: yes
-  action: service name=fail2ban state=restarted enabled=yes
-
-- name: forbid SSH root login
-  sudo: yes
-  lineinfile: destfile=/etc/ssh/sshd_config regexp="^PermitRootLogin" line="PermitRootLogin no" state=present
-  notify:
-    - restart ssh
-
-- name: reset firewall
-  sudo: yes
-  action: shell ufw --force reset
-
-- name: allow firewall authorized ports
-  sudo: yes
-  action: shell ufw allow {{ item }}
-  with_items:
-    - 22
-    - 80
-    - 443
-
-- name: enable firewall
-  sudo: yes
-  action: shell ufw --force enable
-
-- name: show firewall status
-  sudo: yes
-  action: shell ufw status
-
 - name: add discourse user
   user: name=discourse groups=sudo,admin
 
@@ -88,3 +49,18 @@
   when: true
   notify:
     - restart discourse
+
+- name: check for backup.cron.sh
+  local_action: stat path={{ role_path }}/files/backup.cron.sh
+  register: backup_cron_exists
+
+- name: copy backup.cron.sh
+  sudo: yes
+  copy: src=backup.cron.sh dest=/home/discourse/backup.cron.sh owner=discourse group=sudo
+  when: backup_cron_exists
+
+# runs cron script @ 10,16,22:00 => 8,14,20:00 GMT+1
+- name: enable backup.cron.sh
+  sudo: yes
+  cron: name="run backup cron script" minute="0" hour="10,16,22" job="sh /home/discourse/backup.cron.sh"
+  when: backup_cron_exists
