@@ -1,8 +1,4 @@
 ---
-- name: update apt repository cache
-  apt:
-    update_cache: yes
-
 - name: install apt packages
   apt: pkg={{ item }} state=latest
   sudo: yes
