@@ -1,6 +1,6 @@
 # Ansible-discourse
 
-Provision [Discourse](https://github.com/discourse/discourse) with Vagrant, Ansible and [Discourse Docker](https://github.com/discourse/discourse_docker)
+Provisioning [Discourse](https://github.com/discourse/discourse) with Vagrant, Ansible and [Discourse Docker](https://github.com/discourse/discourse_docker)
 
 
 ## Requirements
