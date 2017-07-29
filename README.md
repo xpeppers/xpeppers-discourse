@@ -37,7 +37,7 @@ vagrant up
 
 5) Configure Discourse (from the host machine)
 
-Clone [Discourse Docker](https://github.com/discourse/discourse_docker) to properly configure you Discourse installation:
+Clone [Discourse Docker](https://github.com/discourse/discourse_docker) to properly configure your Discourse installation:
 
 ```
 git clone git@github.com:discourse/discourse_docker.git
