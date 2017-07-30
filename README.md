@@ -56,7 +56,7 @@ cp discourse_docker/samples/standalone.yml discourse_docker/containers/app.yml
 7) (Optional) Configure backup:
 
 ```
-cp playbooks/roles/machine/files/backup.cron.template.sh playbooks/roles/machine/files/backup.cron.sh
+cp playbooks/roles/discourse/files/backup.cron.template.sh playbooks/roles/discourse/files/backup.cron.sh
 ```
 
 Fill the API key in `backup.cron.sh` with the key you find here: https://<DISCOURSE_HOST>/admin/api/keys
