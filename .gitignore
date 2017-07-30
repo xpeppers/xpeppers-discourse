@@ -1,7 +1,5 @@
 .vagrant
 discourse_docker/
-playbooks/roles/discourse/files/app.yml
-playbooks/roles/discourse/files/*.yml
 playbooks/roles/discourse/files/ssl.crt
 playbooks/roles/discourse/files/ssl.key
 playbooks/roles/machine/files/backup.cron.sh

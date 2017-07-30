@@ -7,39 +7,46 @@
   user: name=discourse groups=sudo,admin
 
 - name: copy discourse source
-  synchronize: src={{playbook_dir}}/../discourse_docker/ dest=/home/discourse/discourse rsync_opts="--exclude=.git"
+  synchronize: src={{playbook_dir}}/../discourse_docker/ dest={{ discourse_location }} rsync_opts="--exclude=.git"
   sudo: yes
-  # notify:
-  #   - stop discourse
-  #   - rebuild discourse
 
 - name: fix discourse permissions
-  file: path=/home/discourse/discourse owner=discourse group=discourse recurse=yes
+  file: path={{ discourse_location }} owner=discourse group=discourse recurse=yes
+  register: discourse_copied
 
-# - name: Create /var/discourse/shared/standalone/ssl directory
-#   file: path=/var/discourse/shared/standalone/ssl state=directory owner=discourse group=sudo
+- name: check if SSL support have to be enabled
+  local_action: stat path=ssl.key
+  register: enable_ssl_support
+  ignore_errors: True
 
-# - name: copy ssl key
-#   copy: src=ssl.key dest=/var/discourse/shared/standalone/ssl/ssl.key owner=discourse group=sudo
-#   when: ssl_key is defined
-#   notify:
-#     - stop discourse
-#     - rebuild discourse
+- name: Create {{ discourse_location }}/shared/standalone/ssl directory
+  file: path={{ discourse_location }}/shared/standalone/ssl state=directory owner=discourse group=discourse
+  when: enable_ssl_support.stat.exists
 
-# - name: copy ssl crt
-#   copy: src=ssl.crt dest=/var/discourse/shared/standalone/ssl/ssl.crt owner=discourse group=sudo
-#   when: ssl_crt is defined
-#   notify:
-#     - stop discourse
-#     - rebuild discourse
+- name: copy ssl key
+  copy: src=ssl.key dest={{ discourse_location }}/shared/standalone/ssl/ssl.key owner=discourse group=discourse
+  when: enable_ssl_support.stat.exists
 
-# - meta: flush_handlers
+- name: copy ssl crt
+  copy: src=ssl.crt dest={{ discourse_location }}/shared/standalone/ssl/ssl.crt owner=discourse group=discourse
+  when: enable_ssl_support.stat.exists
 
-# - name: restart discourse ! handler
-#   command: echo "start discourse"
-#   when: true
-#   notify:
-#     - restart discourse
+- name: check if discourse is running
+  command: docker ps --filter name=app --filter status=running
+  register: discourse_is_running
+
+- name: stop already running instance of discourse and rebuild it
+  command: echo rebuilding discourse
+  when: discourse_is_running|succeeded
+  notify:
+    - stop discourse
+    - rebuild discourse
+
+- name: build and run discourse
+  command: echo rebuilding discourse
+  when: discourse_is_running|failed
+  notify:
+    - rebuild discourse
 
 # - name: check for backup.cron.sh
 #   local_action: stat path={{ role_path }}/files/backup.cron.sh

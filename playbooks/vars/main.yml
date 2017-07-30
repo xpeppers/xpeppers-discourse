@@ -1,4 +1,7 @@
 ---
+# where to install discourse
+discourse_location: /var/discourse
+
 # https://github.com/angstwad/docker.ubuntu
 update_docker_package: no
 
