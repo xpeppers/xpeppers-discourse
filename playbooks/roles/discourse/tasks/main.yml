@@ -15,9 +15,8 @@
   register: discourse_copied
 
 - name: check if SSL support have to be enabled
-  local_action: stat path=ssl.key
+  local_action: stat path={{ role_path }}/files/ssl.key
   register: enable_ssl_support
-  ignore_errors: True
 
 - name: Create {{ discourse_location }}/shared/standalone/ssl directory
   file: path={{ discourse_location }}/shared/standalone/ssl state=directory owner=discourse group=discourse
@@ -48,17 +47,17 @@
   notify:
     - rebuild discourse
 
-# - name: check for backup.cron.sh
-#   local_action: stat path={{ role_path }}/files/backup.cron.sh
-#   register: backup_cron_exists
+- name: check for backup.cron.sh
+  local_action: stat path={{ role_path }}/files/backup.cron.sh
+  register: backup_cron_exists
 
-# - name: copy backup.cron.sh
-#   sudo: yes
-#   copy: src=backup.cron.sh dest=/home/discourse/backup.cron.sh owner=discourse group=sudo
-#   when: backup_cron_exists
+- name: copy backup.cron.sh
+  sudo: yes
+  copy: src=backup.cron.sh dest={{ discourse_location }}/backup.cron.sh owner=discourse group=discourse
+  when: backup_cron_exists.stat.exists
 
-# # runs cron script @ 10,16,22:00 => 8,14,20:00 GMT+1
-# - name: enable backup.cron.sh
-#   sudo: yes
-#   cron: name="run backup cron script" minute="0" hour="10,16,22" job="sh /home/discourse/backup.cron.sh"
-#   when: backup_cron_exists
+# # # runs cron script @ 10,16,22:00 => 8,14,20:00 GMT+1
+- name: enable backup.cron.sh
+  sudo: yes
+  cron: name="run backup cron script" minute="0" hour="10,16,22" job="sh {{ discourse_location }}/backup.cron.sh"
+  when: backup_cron_exists.stat.exists
