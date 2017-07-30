@@ -9,4 +9,5 @@ curl "$BACKUPS_ENDPOINT?api_key=$API_KEY&api_username=$API_USERNAME" \
   -X POST \
   --data "with_uploads=true" \
   -v \
+  --insecure \
   >> "$LOG_FILE"
