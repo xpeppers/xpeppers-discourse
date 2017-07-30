@@ -131,13 +131,17 @@ scripts/cmd_aws [YOUR-PEM-LOCATION] "sudo docker ps"
 ```
 
 
+## Useful resources
 
-# Notes
+* [How to create an administrator account after install](https://meta.discourse.org/t/how-to-create-an-administrator-account-after-install/14046)
+
+
+## Notes
 
 Ansibles `gather_facts` cannot be disabled.
 
 
 
-# (Un)License
+## (Un)License
 
 All information is public content.
