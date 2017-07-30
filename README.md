@@ -134,7 +134,8 @@ scripts/cmd_aws [YOUR-PEM-LOCATION] "sudo docker ps"
 ## Useful resources
 
 * [How to create an administrator account after install](https://meta.discourse.org/t/how-to-create-an-administrator-account-after-install/14046)
-
+* [Setting up file and image uploads to S3](https://meta.discourse.org/t/setting-up-file-and-image-uploads-to-s3/7229)
+* [Setting up Discourse on AWS](http://dev.bizo.com/2014/06/discourse-on-aws.html)
 
 ## Notes
 
