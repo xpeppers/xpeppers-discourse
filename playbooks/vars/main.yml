@@ -1,5 +1,11 @@
 ---
-ntp_timezone: Europe/CET
+# where to install discourse
+discourse_location: /var/discourse
+
+# https://github.com/angstwad/docker.ubuntu
+update_docker_package: no
+
+ntp_timezone: Europe/Rome
 ntp_enabled: true
 ntp_manage_config: false
 ntp_servers:
@@ -7,3 +13,8 @@ ntp_servers:
   - 1.pool.ntp.org iburst
   - 2.pool.ntp.org iburst
   - 3.pool.ntp.org iburst
+
+firewall_allowed_tcp_ports:
+  - "22"
+  - "80"
+  - "443"

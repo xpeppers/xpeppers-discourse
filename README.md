@@ -1,22 +1,20 @@
-# ansible-discourse
+# Ansible-discourse
 
-example repo to provision of a machine to host the discourse platform
-
-
-
-### Requirements
-
-- vagrant (tested with *1.8.1*)
-- Ansible (tested with *1.9.3*)
+Provisioning [Discourse](https://github.com/discourse/discourse) with Vagrant, Ansible and [Discourse Docker](https://github.com/discourse/discourse_docker)
 
 
+## Requirements
 
-# Basic Setup
+* Vagrant (tested with *1.8.1*)
+* Ansible (tested with *1.9.3*)
 
-1) Clone this project (*important* with `--recursive`):
+
+## Basic Setup
+
+1) Clone this project:
 
 ```
-git clone git@github.com:xpeppers/ansible-discourse.git --recursive
+git clone git@github.com:xpeppers/ansible-discourse.git
 ```
 
 2) Add an entry to your `/etc/hosts` file that maps the domain `discourse.dev` to the IP of the virtual machine:
@@ -39,21 +37,34 @@ vagrant up
 
 5) Configure Discourse (from the host machine)
 
+Clone [Discourse Docker](https://github.com/discourse/discourse_docker) to properly configure your Discourse installation:
+
 ```
-cp playbooks/roles/discourse/files/discourse/samples/standalone.yml playbooks/roles/discourse/files/app.yml
-cp playbooks/roles/machine/files/backup.cron.template.sh playbooks/roles/machine/files/backup.cron.sh
+git clone git@github.com:discourse/discourse_docker.git
 ```
 
-6) Edit the files accordingly to your setup (hostname, stmp settings, etc.)
+Copy the configuration file `discourse_docker/samples/standalone.yml`:
 
-6a) For the development machine setup with vagrant, comment the line with `templates/web.ssl.template.yml` in `app.yml` to disable HTTPS
+```
+cp discourse_docker/samples/standalone.yml discourse_docker/containers/app.yml
+```
 
-6b) For the production machine setup, if you are using HTTPS, place the SSL key and certificate under `playbooks/roles/discourse/files/` and name the files `ssl.key` and `ssl.crt`
+6) Edit the file `app.yml` accordingly to your setup (hostname, stmp settings, etc.)
 
-7) Fill the API key in `backup.cron.sh` with the key you find here: https://<DISCOURSE_HOST>/admin/api/keys
+6b) For the production machine setup, if you are using HTTPS, place the SSL key and certificate under `playbooks/roles/discourse/files/` and name the files `ssl.key` and `ssl.crt` and uncomment the line with `templates/web.ssl.template.yml` in `app.yml` to enable HTTPS. (Reference: [Allowing SSL / HTTPS for your Discourse Docker setup](https://meta.discourse.org/t/allowing-ssl-https-for-your-discourse-docker-setup/13847))
+
+7) (Optional) Configure backup:
+
+```
+cp playbooks/roles/discourse/files/backup.cron.template.sh playbooks/roles/discourse/files/backup.cron.sh
+```
+
+Fill the API key in `backup.cron.sh` with the key you find here: https://<DISCOURSE_HOST>/admin/api/keys
+
+8) (Optional) If you want to change the default (`/var/discourse`) installation directory of Discourse, you can change the value in `playbooks/vars/main.yml` and change the value of volumes in `app.yml` too.
 
 
-# Provisioning
+## Provisioning
 
 Provision with
 
@@ -62,6 +73,8 @@ Provision with
 scripts/provision_vagrant
 # or
 scripts/provision_vagrant_only_machine
+# or
+scripts/provision_vagrant_only_discourse
 
 # AWS host
 scripts/provision_aws
@@ -70,7 +83,7 @@ scripts/provision_aws_only_machine
 ```
 
 
-# Utility scripts
+## Utility scripts
 
 ### Manual/Automatic Backups
 
@@ -118,13 +131,18 @@ scripts/cmd_aws [YOUR-PEM-LOCATION] "sudo docker ps"
 ```
 
 
+## Useful resources
 
-# Notes
+* [How to create an administrator account after install](https://meta.discourse.org/t/how-to-create-an-administrator-account-after-install/14046)
+* [Setting up file and image uploads to S3](https://meta.discourse.org/t/setting-up-file-and-image-uploads-to-s3/7229)
+* [Setting up Discourse on AWS](http://dev.bizo.com/2014/06/discourse-on-aws.html)
+
+## Notes
 
 Ansibles `gather_facts` cannot be disabled.
 
 
 
-# (Un)License
+## (Un)License
 
 All information is public content.

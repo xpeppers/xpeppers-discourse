@@ -1,90 +1,63 @@
 ---
-- name: install apt packages
-  apt: pkg={{ item }} state=latest
-  sudo: yes
-  with_items:
-    - fail2ban
-    - ufw
-    - git
-    - htop
-
-- name: ensure fail2ban is running
-  sudo: yes
-  action: service name=fail2ban state=restarted enabled=yes
-
-- name: forbid SSH root login
-  sudo: yes
-  lineinfile: destfile=/etc/ssh/sshd_config regexp="^PermitRootLogin" line="PermitRootLogin no" state=present
-  notify:
-    - restart ssh
-
-- name: reset firewall
-  sudo: yes
-  action: shell ufw --force reset
-
-- name: allow firewall authorized ports
-  sudo: yes
-  action: shell ufw allow {{ item }}
-  with_items:
-    - 22
-    - 80
-    - 443
-
-- name: enable firewall
-  sudo: yes
-  action: shell ufw --force enable
-
-- name: show firewall status
-  sudo: yes
-  action: shell ufw status
-
-- name: add discourse user
-  user: name=discourse groups=sudo,admin
-
 - name: ensure docker is running
   service: name=docker state=restarted
   sudo: yes
 
-- name: check if discourse is running
-  shell: docker ps
-  sudo: yes
-  register: discourse_running
+- name: add discourse user
+  user: name=discourse groups=sudo,admin
 
 - name: copy discourse source
-  synchronize: src=discourse dest=/var/ rsync_opts="--exclude=.git"
-  notify:
-    - stop discourse
-    - rebuild discourse
-- name: Ensures /var/discourse/containers dir exists
-  file: path={{project_root}}/conf state=directory
+  synchronize: src={{playbook_dir}}/../discourse_docker/ dest={{ discourse_location }} rsync_opts="--exclude=.git"
+  sudo: yes
 
-- name: copy discourse configuration app.yml
-  copy: src=app.yml dest=/var/discourse/containers/app.yml owner=discourse group=sudo
-  notify:
-    - stop discourse
-    - rebuild discourse
+- name: fix discourse permissions
+  file: path={{ discourse_location }} owner=discourse group=discourse recurse=yes
+  register: discourse_copied
 
-- name: Create /var/discourse/shared/standalone/ssl directory
-  file: path=/var/discourse/shared/standalone/ssl state=directory owner=discourse group=sudo
+- name: check if SSL support have to be enabled
+  local_action: stat path={{ role_path }}/files/ssl.key
+  register: enable_ssl_support
+
+- name: Create {{ discourse_location }}/shared/standalone/ssl directory
+  file: path={{ discourse_location }}/shared/standalone/ssl state=directory owner=discourse group=discourse
+  when: enable_ssl_support.stat.exists
 
 - name: copy ssl key
-  copy: src=ssl.key dest=/var/discourse/shared/standalone/ssl/ssl.key owner=discourse group=sudo
-  when: ssl_key is defined
-  notify:
-    - stop discourse
-    - rebuild discourse
+  copy: src=ssl.key dest={{ discourse_location }}/shared/standalone/ssl/ssl.key owner=discourse group=discourse
+  when: enable_ssl_support.stat.exists
 
 - name: copy ssl crt
-  copy: src=ssl.crt dest=/var/discourse/shared/standalone/ssl/ssl.crt owner=discourse group=sudo
-  when: ssl_crt is defined
+  copy: src=ssl.crt dest={{ discourse_location }}/shared/standalone/ssl/ssl.crt owner=discourse group=discourse
+  when: enable_ssl_support.stat.exists
+
+- name: check if discourse is running
+  command: docker ps --filter name=app --filter status=running
+  register: discourse_is_running
+
+- name: stop already running instance of discourse and rebuild it
+  command: echo rebuilding discourse
+  when: discourse_is_running|succeeded
   notify:
     - stop discourse
     - rebuild discourse
 
-- meta: flush_handlers
-
-- name: restart discourse ! handler
-  command: echo "start discourse"
-  when: true
+- name: build and run discourse
+  command: echo rebuilding discourse
+  when: discourse_is_running|failed
   notify:
-    - restart discourse
+    - rebuild discourse
+
+- name: check for backup.cron.sh
+  local_action: stat path={{ role_path }}/files/backup.cron.sh
+  register: backup_cron_exists
+
+- name: copy backup.cron.sh
+  sudo: yes
+  copy: src=backup.cron.sh dest={{ discourse_location }}/backup.cron.sh owner=discourse group=discourse
+  when: backup_cron_exists.stat.exists
+
+# # # runs cron script @ 10,16,22:00 => 8,14,20:00 GMT+1
+- name: enable backup.cron.sh
+  sudo: yes
+  cron: name="run backup cron script" minute="0" hour="10,16,22" job="sh {{ discourse_location }}/backup.cron.sh"
+  when: backup_cron_exists.stat.exists
