@@ -4,7 +4,9 @@ Description: Single machine in autoscaling 1:1 for simple test and simple purpos
 Parameters:
   VpcId:
     Type: String
-  SubnetId:
+  SubnetIdA:
+    Type: String
+  SubnetIdB:
     Type: String
   InstanceName:
     Type: String
@@ -48,12 +50,19 @@ Parameters:
     Description: The EC2 Key Pair to allow SSH access to the instances
     Type: AWS::EC2::KeyPair::KeyName
     ConstraintDescription: must be the name of an existing EC2 KeyPair.
-Mappings:
-  AMI2RegionMap:
-    eu-west-1:
-      '64': ami-405f7226
-    eu-central-1:
-      '64': ami-b03ffedf
+  AMIid:
+    Description: AMI id of silver discourse image
+    Type: AWS::EC2::Image::Id
+  DBInstanceType:
+    Description: RDS database instance
+    Type: String
+  DBPassword:
+    Description: Password for database
+    Type: String
+    NoEcho: true
+  CertificateARN:
+    Type: String
+    Description: Certificate ARN to associate with load balancer
 Resources:
 
   InstanceProfile:
@@ -100,6 +109,96 @@ Resources:
             - logs:DescribeLogStreams
             Resource:
             - arn:aws:logs:*:*:*
+      - PolicyName: route53
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+            - route53:ChangeResourceRecordSets
+            Resource: '*'
+      - PolicyName: metrics
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+            - cloudwatch:PutMetricData
+            - cloudwatch:GetMetricStatistics
+            - cloudwatch:ListMetrics
+            Resource:
+            - '*'
+
+#Load Balancing section
+  DiscourseElasticLoadBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Name: discourse-ALB
+      SecurityGroups:
+      - !Ref LoadBalancerWebServerGroup
+      Subnets:
+        - !Ref SubnetIdA
+        - !Ref SubnetIdB
+  WebServerListenersHTTP:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref DiscourseElasticLoadBalancer
+      Port: '80'
+      Protocol: HTTP
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref TargetGrougDiscourse
+  WebServerListenersHTTPS:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref DiscourseElasticLoadBalancer
+      Port: '443'
+      Protocol: HTTPS
+      Certificates:
+        - CertificateArn: !Ref CertificateARN
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref TargetGrougDiscourse
+  ElasticLoadBalancerInternalListener:
+    Type: AWS::ElasticLoadBalancingV2::ListenerRule
+    Properties:
+      Actions:
+      - Type: forward
+        TargetGroupArn:
+          !Ref TargetGrougDiscourse
+      Conditions:
+      - Field: path-pattern
+        Values:
+        - "/*"
+      ListenerArn:
+        !Ref WebServerListenersHTTP
+      Priority: 1
+  LoadBalancerWebServerGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Enable HTTP and HTTPS access
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: '80'
+        ToPort: '80'
+        CidrIp: 0.0.0.0/0
+      - IpProtocol: tcp
+        FromPort: '443'
+        ToPort: '443'
+        CidrIp: 0.0.0.0/0
+  TargetGrougDiscourse:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      HealthCheckIntervalSeconds: 10
+      UnhealthyThresholdCount: 3
+      HealthCheckPath: "/login"
+      HealthCheckPort: '80'
+      Name: discourse-targetgroup
+      Port: 80
+      Protocol: HTTP
+      VpcId: !Ref VpcId
+
   AutoScalingGroup:
     Type: AWS::AutoScaling::AutoScalingGroup
     Properties:
@@ -113,30 +212,26 @@ Resources:
       MinSize: 1
       MaxSize: 1
       VPCZoneIdentifier:
-        - !Ref SubnetId
+        - !Ref SubnetIdA
+      TargetGroupARNs:
+        - !Ref TargetGrougDiscourse
   LaunchConfiguration:
     Type: AWS::AutoScaling::LaunchConfiguration
     Properties:
       IamInstanceProfile: !Ref InstanceProfile
       KeyName:
         Ref: KeyName
-      ImageId:
-        Fn::FindInMap:
-        - AMI2RegionMap
-        - Ref: AWS::Region
-        - '64'
+      ImageId: !Ref AMIid
       SecurityGroups:
-      - Ref: InstanceSecurityGroup
-      - Ref: SSHSecurityGroup
+        - Ref: InstanceSecurityGroup
+        - Ref: SSHSecurityGroup
       InstanceType:
         Ref: InstanceType
       UserData:
         Fn::Base64:
           !Sub |
             #!/bin/bash -x
-            apt-get update
-            apt-get install --yes awscli
-            apt-get install ansible
+            echo ok >> /tmp/ok
   InstanceSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
@@ -147,11 +242,11 @@ Resources:
       - IpProtocol: tcp
         FromPort: '80'
         ToPort: '80'
-        CidrIp: 0.0.0.0/0
+        SourceSecurityGroupId: !Ref LoadBalancerWebServerGroup
       - IpProtocol: tcp
         FromPort: '443'
         ToPort: '443'
-        CidrIp: 0.0.0.0/0
+        SourceSecurityGroupId: !Ref LoadBalancerWebServerGroup
 
   SSHSecurityGroup:
     Type: AWS::EC2::SecurityGroup
@@ -165,6 +260,80 @@ Resources:
         ToPort: '22'
         CidrIp:
           Ref: SshCidrAllow
+
+  DBSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupDescription: "Subnet for RDS"
+      SubnetIds:
+        - !Ref SubnetIdA
+        - !Ref SubnetIdB
+  DBSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: "Security group for RDS"
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: '5432'
+        ToPort: '5432'
+        SourceSecurityGroupId: !Ref InstanceSecurityGroup
+  PostgresRDS: 
+    Type: "AWS::RDS::DBInstance"
+    DeletionPolicy : "Retain"
+    Properties: 
+      DBInstanceIdentifier: discourse
+      AllocatedStorage: "10"
+      DBInstanceClass: !Ref DBInstanceType
+      Engine: "postgres"
+      EngineVersion: "9.5.6"
+      MasterUsername: discourse
+      MasterUserPassword: !Ref DBPassword
+      DBSubnetGroupName: !Ref DBSubnetGroup
+      VPCSecurityGroups:
+        - !Ref DBSecurityGroup
+
+#Route53
+  PostgresRDSdns:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneName: xpeppers.com.
+      TTL: 300
+      Name: discoursedb.xpeppers.com.
+      Type: CNAME
+      ResourceRecords:
+        - !GetAtt PostgresRDS.Endpoint.Address
+  LoadBalancerDNS:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneName: xpeppers.com.
+      Name: newdiscourse.xpeppers.com.
+      Type: A
+      AliasTarget:
+        DNSName:
+          Fn::GetAtt:
+            - DiscourseElasticLoadBalancer
+            - DNSName
+        HostedZoneId:
+          Fn::GetAtt:
+            - DiscourseElasticLoadBalancer
+            - CanonicalHostedZoneID
+  LoadBalancerDNSUfficial:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneName: xpeppers.com.
+      Name: discourse.xpeppers.com.
+      Type: A
+      AliasTarget:
+        DNSName:
+          Fn::GetAtt:
+            - DiscourseElasticLoadBalancer
+            - DNSName
+        HostedZoneId:
+          Fn::GetAtt:
+            - DiscourseElasticLoadBalancer
+            - CanonicalHostedZoneID
+
 Outputs:
   InstanceSecurityGroup:
     Description: Security group ec2
