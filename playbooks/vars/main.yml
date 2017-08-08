@@ -18,3 +18,10 @@ firewall_allowed_tcp_ports:
   - "22"
   - "80"
   - "443"
+
+#Variables for ansible-role-aws-tools
+install_awscli: true
+install_logs_agent: false
+install_custom_metrics: true
+install_codedeploy: false
+install_cfn_bootstrap: false
