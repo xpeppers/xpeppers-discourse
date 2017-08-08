@@ -19,18 +19,6 @@
   local_action: stat path={{ role_path }}/files/ssl.key
   register: enable_ssl_support
 
-- name: Create {{ discourse_location }}/shared/standalone/ssl directory
-  file: path={{ discourse_location }}/shared/standalone/ssl state=directory owner=discourse group=discourse
-  when: enable_ssl_support.stat.exists
-
-- name: copy ssl key
-  copy: src=ssl.key dest={{ discourse_location }}/shared/standalone/ssl/ssl.key owner=discourse group=discourse
-  when: enable_ssl_support.stat.exists
-
-- name: copy ssl crt
-  copy: src=ssl.crt dest={{ discourse_location }}/shared/standalone/ssl/ssl.crt owner=discourse group=discourse
-  when: enable_ssl_support.stat.exists
-
 - name: check if discourse is running
   command: docker ps --filter name=app --filter status=running
   register: discourse_is_running
