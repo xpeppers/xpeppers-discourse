@@ -6,9 +6,10 @@
 - name: add discourse user
   user: name=discourse groups=sudo,admin
 
-- name: copy discourse source
-  synchronize: src={{playbook_dir}}/../discourse_docker/ dest={{ discourse_location }} rsync_opts="--exclude=.git"
-  sudo: yes
+- git:
+    repo: https://github.com/discourse/discourse_docker.git
+    dest: '{{ discourse_location }}'
+    update: no
 
 - name: fix discourse permissions
   file: path={{ discourse_location }} owner=discourse group=discourse recurse=yes
