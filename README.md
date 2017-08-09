@@ -14,7 +14,7 @@ Provisioning [Discourse](https://github.com/discourse/discourse) with Vagrant, A
 1) Clone this project:
 
 ```
-git clone git@github.com:xpeppers/ansible-discourse.git
+git clone --recursive git@github.com:xpeppers/ansible-discourse.git
 ```
 
 2) Add an entry to your `/etc/hosts` file that maps the domain `discourse.dev` to the IP of the virtual machine:
@@ -35,25 +35,9 @@ vagrant up
 [sudo] ansible-galaxy install -r requirements.yml
 ```
 
-5) Configure Discourse (from the host machine)
+5) Edit playbooks/roles/discourse/files/app.yml file filling <> parameters:
 
-Clone [Discourse Docker](https://github.com/discourse/discourse_docker) to properly configure your Discourse installation:
-
-```
-git clone git@github.com:discourse/discourse_docker.git
-```
-
-Copy the configuration file `discourse_docker/samples/standalone.yml`:
-
-```
-cp discourse_docker/samples/standalone.yml discourse_docker/containers/app.yml
-```
-
-6) Edit the file `app.yml` accordingly to your setup (hostname, stmp settings, etc.)
-
-6b) For the production machine setup, if you are using HTTPS, place the SSL key and certificate under `playbooks/roles/discourse/files/` and name the files `ssl.key` and `ssl.crt` and uncomment the line with `templates/web.ssl.template.yml` in `app.yml` to enable HTTPS. (Reference: [Allowing SSL / HTTPS for your Discourse Docker setup](https://meta.discourse.org/t/allowing-ssl-https-for-your-discourse-docker-setup/13847))
-
-7) (Optional) Configure backup:
+6) (Optional) Configure backup:
 
 ```
 cp playbooks/roles/discourse/files/backup.cron.template.sh playbooks/roles/discourse/files/backup.cron.sh
@@ -61,7 +45,7 @@ cp playbooks/roles/discourse/files/backup.cron.template.sh playbooks/roles/disco
 
 Fill the API key in `backup.cron.sh` with the key you find here: https://<DISCOURSE_HOST>/admin/api/keys
 
-8) (Optional) If you want to change the default (`/var/discourse`) installation directory of Discourse, you can change the value in `playbooks/vars/main.yml` and change the value of volumes in `app.yml` too.
+7) (Optional) If you want to change the default (`/var/discourse`) installation directory of Discourse, you can change the value in `playbooks/vars/main.yml` and change the value of volumes in `app.yml` too.
 
 
 ## Provisioning
@@ -146,7 +130,6 @@ scripts/cmd_aws [YOUR-PEM-LOCATION] "sudo docker ps"
 3. Edit cloudformation/ec2-parameters.json file
 4. Launch cloudformation: ```aws cloudformation create-stack --profile PROFILE_NAME --stack-name STACK_NAME --template-body file://cloudformation/ec2.yaml --parameters file://cloudformation/ec2-parameters.json --region REGION --capabilities CAPABILITY_IAM```
 5. To update an existing stack: ```aws cloudformation update-stack --profile PROFILE_NAME --stack-name STACK_NAME --template-body file://cloudformation/ec2.yaml --parameters file://cloudformation/ec2-parameters.json --region REGION --capabilities CAPABILITY_IAM```
-
 
 ## Useful resources
 
