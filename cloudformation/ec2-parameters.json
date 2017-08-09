@@ -1,23 +1,23 @@
 [
   {
     "ParameterKey": "VpcId",
-    "ParameterValue": "vpc-4b9e772e"
+    "ParameterValue": ""
   },
   {
     "ParameterKey": "SubnetIdA",
-    "ParameterValue": "subnet-0230dc75"
+    "ParameterValue": ""
   },
   {
     "ParameterKey": "SubnetIdB",
-    "ParameterValue": "subnet-f6a36092"
+    "ParameterValue": ""
   },
   {
     "ParameterKey": "InstanceName",
-    "ParameterValue": "discourse"
+    "ParameterValue": ""
   },
   {
     "ParameterKey": "SshCidrAllow",
-    "ParameterValue": "79.6.56.100/32"
+    "ParameterValue": ""
   },
   {
     "ParameterKey": "InstanceType",
@@ -29,7 +29,7 @@
   },
   {
     "ParameterKey": "AMIid",
-    "ParameterValue": "ami-4d534d2b"
+    "ParameterValue": "ami-4d597d2b"
   },
   {
     "ParameterKey": "DBInstanceType",
@@ -37,10 +37,10 @@
   },
   {
     "ParameterKey": "DBPassword",
-    "ParameterValue": "3qwLiaUzn3"
+    "ParameterValue": ""
   },
   {
     "ParameterKey": "CertificateARN",
-    "ParameterValue": "arn:aws:acm:eu-west-1:422553113847:certificate/6c888424-37c1-4f9d-95f3-676b9e296b75"
+    "ParameterValue": ""
   }
 ]
