@@ -130,6 +130,23 @@ scripts/cmd_aws "sudo docker ps"
 scripts/cmd_aws [YOUR-PEM-LOCATION] "sudo docker ps"
 ```
 
+# Deployment on AWS
+
+## Prerequisities
+
+1. aws cli
+2. aws access key and secret key with administrator permission
+3. packer
+4. ansible (tested with 2.3.0)
+
+## Run
+
+1. Run packer and build AMI: ```packer build -var 'aws_access_key=<ACCESS_KEY>' -var 'aws_secret_key=<SECRET_KEY>' packer-silver-image.json```
+2. Copy ami id created with packer
+3. Edit cloudformation/ec2-parameters.json file
+4. Launch cloudformation: ```aws cloudformation create-stack --profile PROFILE_NAME --stack-name STACK_NAME --template-body file://cloudformation/ec2.yaml --parameters file://cloudformation/ec2-parameters.json --region REGION --capabilities CAPABILITY_IAM```
+5. To update an existing stack: ```aws cloudformation update-stack --profile PROFILE_NAME --stack-name STACK_NAME --template-body file://cloudformation/ec2.yaml --parameters file://cloudformation/ec2-parameters.json --region REGION --capabilities CAPABILITY_IAM```
+
 
 ## Useful resources
 
