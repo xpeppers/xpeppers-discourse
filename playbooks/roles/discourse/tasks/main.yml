@@ -15,10 +15,6 @@
   file: path={{ discourse_location }} owner=discourse group=discourse recurse=yes
   register: discourse_copied
 
-- name: check if SSL support have to be enabled
-  local_action: stat path={{ role_path }}/files/ssl.key
-  register: enable_ssl_support
-
 - name: check if discourse is running
   command: docker ps --filter name=app --filter status=running
   register: discourse_is_running
