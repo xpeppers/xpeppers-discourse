@@ -4,7 +4,9 @@ Provisioning [Discourse](https://github.com/discourse/discourse) with Vagrant, A
 
 # Table of contents
 * For the installation on AWS see section [Deployment on AWS](#deployment-on-aws)
-* For local installation with vagrant see section []
+* For local installation with vagrant see section [Local Deployment with Vagrant](#local-deployment-with-vagrant)
+
+# Local Deployment with Vagrant
 
 ## Requirements
 
