@@ -2,7 +2,6 @@
 
 Provisioning [Discourse](https://github.com/discourse/discourse) with Vagrant, Ansible, [Discourse Docker](https://github.com/discourse/discourse_docker) and AWS.
 
-# Table of contents
 * For the installation on AWS see section [Deployment on AWS](#deployment-on-aws)
 * For local installation with vagrant see section [Local Deployment with Vagrant](#local-deployment-with-vagrant)
 
