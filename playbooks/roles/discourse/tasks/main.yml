@@ -31,18 +31,3 @@
   when: discourse_is_running|failed
   notify:
     - rebuild discourse
-
-- name: check for backup.cron.sh
-  local_action: stat path={{ role_path }}/files/backup.cron.sh
-  register: backup_cron_exists
-
-- name: copy backup.cron.sh
-  sudo: yes
-  copy: src=backup.cron.sh dest={{ discourse_location }}/backup.cron.sh owner=discourse group=discourse
-  when: backup_cron_exists.stat.exists
-
-# # # runs cron script @ 10,16,22:00 => 8,14,20:00 GMT+1
-- name: enable backup.cron.sh
-  sudo: yes
-  cron: name="run backup cron script" minute="0" hour="10,16,22" job="sh {{ discourse_location }}/backup.cron.sh"
-  when: backup_cron_exists.stat.exists
