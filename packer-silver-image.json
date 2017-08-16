@@ -10,7 +10,15 @@
       "ssh_username": "ubuntu",
       "ami_name": "discourse-{{isotime \"20060102-1504\"}}",
       "vpc_id": "vpc-4b9e772e",
-      "subnet_id": "subnet-0230dc75"
+      "subnet_id": "subnet-0230dc75",
+"launch_block_device_mappings": [
+    {
+      "device_name": "/dev/sda1",
+      "volume_size": 16,
+      "volume_type": "gp2",
+      "delete_on_termination": true
+    }
+  ]
     }
   ],
   "provisioners": [
