@@ -11,6 +11,9 @@
     dest: '{{ discourse_location }}'
     update: no
 
+- name: copy discourse configuration app.yml
+  copy: src=app.yml dest={{ discourse_location }}/containers/app.yml owner=discourse group=sudo
+
 - name: fix discourse permissions
   file: path={{ discourse_location }} owner=discourse group=discourse recurse=yes
   register: discourse_copied
