@@ -1,7 +1,10 @@
 # Ansible-discourse
 
-Provisioning [Discourse](https://github.com/discourse/discourse) with Vagrant, Ansible and [Discourse Docker](https://github.com/discourse/discourse_docker)
+Provisioning [Discourse](https://github.com/discourse/discourse) with Vagrant, Ansible, [Discourse Docker](https://github.com/discourse/discourse_docker) and AWS.
 
+# Table of contents
+For the installation on AWS see section [Deployment on AWS](#Deployment-on-AWS)
+For local installation with vagrant see section []
 
 ## Requirements
 
@@ -123,13 +126,15 @@ scripts/cmd_aws [YOUR-PEM-LOCATION] "sudo docker ps"
 3. packer
 4. ansible (tested with 2.3.0)
 
-## Run
+## Steps
 
-1. Run packer and build AMI: ```packer build -var 'aws_access_key=<ACCESS_KEY>' -var 'aws_secret_key=<SECRET_KEY>' packer-silver-image.json```
-2. Copy ami id created with packer
-3. Edit cloudformation/ec2-parameters.json file
-4. Launch cloudformation: ```aws cloudformation create-stack --profile PROFILE_NAME --stack-name STACK_NAME --template-body file://cloudformation/ec2.yaml --parameters file://cloudformation/ec2-parameters.json --region REGION --capabilities CAPABILITY_IAM```
-5. To update an existing stack: ```aws cloudformation update-stack --profile PROFILE_NAME --stack-name STACK_NAME --template-body file://cloudformation/ec2.yaml --parameters file://cloudformation/ec2-parameters.json --region REGION --capabilities CAPABILITY_IAM```
+1. ```git clone https://github.com/xpeppers/ansible-discourse.git --recursive```
+2. Configurare access_key e secret_key con chiavi presenti su lastpass sotto orione-team dell'account [xpeppers](https://xpeppers.signin.aws.amazon.com/console)
+3. Editare app.yml e copiarlo: ```cp app.yml ./playbooks/roles/discourse/files```
+4. Run packer and build AMI: ```packer build -var 'aws_access_key=<ACCESS_KEY>' -var 'aws_secret_key=<SECRET_KEY>' packer-silver-image.json```
+5. Copy ami id created with packer
+6. Edit cloudformation/ec2-parameters.json file updating the AMI id
+7. Update cloudformation: ```aws cloudformation update-stack --profile PROFILE_NAME --stack-name STACK_NAME --template-body file://cloudformation/ec2.yaml --parameters file://cloudformation/ec2-parameters.json --region REGION --capabilities CAPABILITY_IAM```
 
 ## Useful resources
 
