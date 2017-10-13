@@ -6,4 +6,5 @@
   roles:
     - ansible-role-aws-tools
     - docker
+    - nginx
     - discourse

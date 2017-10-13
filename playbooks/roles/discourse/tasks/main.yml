@@ -18,19 +18,8 @@
   file: path={{ discourse_location }} owner=discourse group=discourse recurse=yes
   register: discourse_copied
 
-- name: check if discourse is running
-  command: docker ps --filter name=app --filter status=running
-  register: discourse_is_running
+- name: Remove default nginx configuration file
+  file: path=/etc/nginx/sites-available/default state=absent
 
-- name: stop already running instance of discourse and rebuild it
-  command: echo rebuilding discourse
-  when: discourse_is_running|succeeded
-  notify:
-    - stop discourse
-    - rebuild discourse
-
-- name: build and run discourse
-  command: echo rebuilding discourse
-  when: discourse_is_running|failed
-  notify:
-    - rebuild discourse
+- name: Restart nginx
+  service: name=nginx state=restarted
