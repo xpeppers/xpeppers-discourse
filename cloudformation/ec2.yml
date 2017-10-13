@@ -63,6 +63,8 @@ Parameters:
   CertificateARN:
     Type: String
     Description: Certificate ARN to associate with load balancer
+  Environment:
+    Type: String
 Resources:
 
   InstanceProfile:
@@ -133,7 +135,7 @@ Resources:
   DiscourseElasticLoadBalancer:
     Type: AWS::ElasticLoadBalancingV2::LoadBalancer
     Properties:
-      Name: discourse-ALB
+      Name: !Sub ${Environment}-ALB
       SecurityGroups:
       - !Ref LoadBalancerWebServerGroup
       Subnets:
@@ -147,7 +149,7 @@ Resources:
       Protocol: HTTP
       DefaultActions:
         - Type: forward
-          TargetGroupArn: !Ref TargetGrougDiscourse
+          TargetGroupArn: !Ref TargetGrougRedirect
   WebServerListenersHTTPS:
     Type: AWS::ElasticLoadBalancingV2::Listener
     Properties:
@@ -159,7 +161,21 @@ Resources:
       DefaultActions:
         - Type: forward
           TargetGroupArn: !Ref TargetGrougDiscourse
-  ElasticLoadBalancerInternalListener:
+  ElasticLoadBalancerInternalListenerHTTP:
+    Type: AWS::ElasticLoadBalancingV2::ListenerRule
+    Properties:
+      Actions:
+      - Type: forward
+        TargetGroupArn:
+          !Ref TargetGrougRedirect
+      Conditions:
+      - Field: path-pattern
+        Values:
+        - "/*"
+      ListenerArn:
+        !Ref WebServerListenersHTTP
+      Priority: 2
+  ElasticLoadBalancerInternalListenerHTTPS:
     Type: AWS::ElasticLoadBalancingV2::ListenerRule
     Properties:
       Actions:
@@ -171,7 +187,7 @@ Resources:
         Values:
         - "/*"
       ListenerArn:
-        !Ref WebServerListenersHTTP
+        !Ref WebServerListenersHTTPS
       Priority: 1
   LoadBalancerWebServerGroup:
     Type: AWS::EC2::SecurityGroup
@@ -194,21 +210,31 @@ Resources:
       UnhealthyThresholdCount: 3
       HealthCheckPath: "/login"
       HealthCheckPort: '80'
-      Name: discourse-targetgroup
+      Name: !Sub ${Environment}-targetgroup
       Port: 80
+      Protocol: HTTP
+      VpcId: !Ref VpcId
+  TargetGrougRedirect:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      HealthCheckIntervalSeconds: 10
+      UnhealthyThresholdCount: 3
+      HealthCheckPath: "/"
+      HealthCheckPort: '81'
+      Matcher:
+        HttpCode: 200-399
+      Name: !Sub ${Environment}-tg-redirect
+      Port: 81
       Protocol: HTTP
       VpcId: !Ref VpcId
 
   AutoScalingGroup:
     Type: AWS::AutoScaling::AutoScalingGroup
-    UpdatePolicy:
-      AutoScalingRollingUpdate:
-        MaxBatchSize: 1
     Properties:
       Tags:
       - Key: Name
         Value:
-          !Ref InstanceName
+          !Sub ${Environment}-${InstanceName}
         PropagateAtLaunch: 'true'
       LaunchConfigurationName:
         Ref: LaunchConfiguration
@@ -218,6 +244,7 @@ Resources:
         - !Ref SubnetIdA
       TargetGroupARNs:
         - !Ref TargetGrougDiscourse
+        - !Ref TargetGrougRedirect
   LaunchConfiguration:
     Type: AWS::AutoScaling::LaunchConfiguration
     Properties:
@@ -244,7 +271,7 @@ Resources:
       SecurityGroupIngress:
       - IpProtocol: tcp
         FromPort: '80'
-        ToPort: '80'
+        ToPort: '81'
         SourceSecurityGroupId: !Ref LoadBalancerWebServerGroup
       - IpProtocol: tcp
         FromPort: '443'
@@ -285,7 +312,7 @@ Resources:
     Type: "AWS::RDS::DBInstance"
     DeletionPolicy : "Retain"
     Properties: 
-      DBInstanceIdentifier: discourse
+      DBInstanceIdentifier: !Ref Environment
       AllocatedStorage: "10"
       DBInstanceClass: !Ref DBInstanceType
       Engine: "postgres"
@@ -302,7 +329,7 @@ Resources:
     Properties:
       HostedZoneName: xpeppers.com.
       TTL: 300
-      Name: discoursedb.xpeppers.com.
+      Name: !Sub ${Environment}db.xpeppers.com.
       Type: CNAME
       ResourceRecords:
         - !GetAtt PostgresRDS.Endpoint.Address
@@ -310,7 +337,7 @@ Resources:
     Type: AWS::Route53::RecordSet
     Properties:
       HostedZoneName: xpeppers.com.
-      Name: newdiscourse.xpeppers.com.
+      Name: !Sub new${Environment}.xpeppers.com.
       Type: A
       AliasTarget:
         DNSName:
@@ -325,7 +352,7 @@ Resources:
     Type: AWS::Route53::RecordSet
     Properties:
       HostedZoneName: xpeppers.com.
-      Name: discourse.xpeppers.com.
+      Name: !Sub ${Environment}.xpeppers.com.
       Type: A
       AliasTarget:
         DNSName:
