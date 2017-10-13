@@ -5,8 +5,5 @@
     - vars/main.yml
   roles:
     - ansible-role-aws-tools
-    - geerlingguy.firewall
-    - geerlingguy.ntp
-    - angstwad.docker_ubuntu
-    - machine
+    - docker
     - discourse

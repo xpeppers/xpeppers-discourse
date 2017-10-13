@@ -2,18 +2,9 @@
 	path = playbooks/roles/ansible-role-aws-tools
 	url = https://github.com/xpeppers/ansible-role-aws-tools.git
 
-[submodule "roles/geerlingguy.ntp"]
-	path = playbooks/roles/geerlingguy.ntp
-	url = https://github.com/geerlingguy/ansible-role-ntp.git
-
-[submodule "roles/geerlingguy.firewall"]
-	path = playbooks/roles/geerlingguy.firewall
-	url = https://github.com/geerlingguy/ansible-role-firewall.git
-
-[submodule "roles/resmo.ntp"]
-	path = playbooks/roles/resmo.ntp
-	url = https://github.com/resmo/ansible-role-ntp.git
-
-[submodule "roles/angstwad.docker_ubuntu"]
-	path = playbooks/roles/angstwad.docker_ubuntu
-	url = https://github.com/angstwad/docker.ubuntu.git
+[submodule "playbooks/roles/docker"]
+	path = playbooks/roles/docker
+	url = https://github.com/geerlingguy/ansible-role-docker.git
+[submodule "playbooks/roles/nginx"]
+	path = playbooks/roles/nginx
+	url = https://github.com/geerlingguy/ansible-role-nginx.git
