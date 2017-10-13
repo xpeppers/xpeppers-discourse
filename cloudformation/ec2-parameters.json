@@ -42,5 +42,9 @@
   {
     "ParameterKey": "CertificateARN",
     "ParameterValue": ""
+  },
+  {
+    "ParameterKey": "Environment",
+    "ParameterValue": ""
   }
 ]
