@@ -45,6 +45,6 @@
   },
   {
     "ParameterKey": "Environment",
-    "ParameterValue": ""
+    "ParameterValue": "discourse"
   }
 ]
