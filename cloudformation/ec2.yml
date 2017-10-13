@@ -262,6 +262,12 @@ Resources:
           !Sub |
             #!/bin/bash -x
             echo ok >> /tmp/ok
+      BlockDeviceMappings:
+        - DeviceName: /dev/sda1
+          Ebs:
+              VolumeType: gp2
+              VolumeSize: 20
+
   InstanceSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
