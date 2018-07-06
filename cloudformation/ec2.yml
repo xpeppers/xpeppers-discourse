@@ -63,7 +63,9 @@ Parameters:
   CertificateARN:
     Type: String
     Description: Certificate ARN to associate with load balancer
-  Environment:
+  ApplicationName:
+    Type: String
+  EnvironmentVersion:
     Type: String
 Resources:
 
@@ -135,7 +137,7 @@ Resources:
   DiscourseElasticLoadBalancer:
     Type: AWS::ElasticLoadBalancingV2::LoadBalancer
     Properties:
-      Name: !Sub ${Environment}-ALB
+      Name: !Sub ${ApplicationName}-ALB
       SecurityGroups:
       - !Ref LoadBalancerWebServerGroup
       Subnets:
@@ -210,7 +212,7 @@ Resources:
       UnhealthyThresholdCount: 3
       HealthCheckPath: "/login"
       HealthCheckPort: '80'
-      Name: !Sub ${Environment}-targetgroup
+      Name: !Sub ${ApplicationName}-targetgroup
       Port: 80
       Protocol: HTTP
       VpcId: !Ref VpcId
@@ -223,7 +225,7 @@ Resources:
       HealthCheckPort: '81'
       Matcher:
         HttpCode: 200-399
-      Name: !Sub ${Environment}-tg-redirect
+      Name: !Sub ${ApplicationName}-tg-redirect
       Port: 81
       Protocol: HTTP
       VpcId: !Ref VpcId
@@ -234,7 +236,7 @@ Resources:
       Tags:
       - Key: Name
         Value:
-          !Sub ${Environment}-${InstanceName}
+          !Sub ${ApplicationName}-${InstanceName}
         PropagateAtLaunch: 'true'
       LaunchConfigurationName:
         Ref: LaunchConfiguration
@@ -314,11 +316,11 @@ Resources:
         FromPort: '5432'
         ToPort: '5432'
         SourceSecurityGroupId: !Ref InstanceSecurityGroup
-  PostgresRDS: 
+  PostgresRDS:
     Type: "AWS::RDS::DBInstance"
     DeletionPolicy : "Retain"
-    Properties: 
-      DBInstanceIdentifier: !Ref Environment
+    Properties:
+      DBInstanceIdentifier: !Ref ApplicationName
       AllocatedStorage: "10"
       DBInstanceClass: !Ref DBInstanceType
       Engine: "postgres"
@@ -335,30 +337,15 @@ Resources:
     Properties:
       HostedZoneName: xpeppers.com.
       TTL: 300
-      Name: !Sub ${Environment}db.xpeppers.com.
+      Name: !Sub ${EnvironmentVersion}.${ApplicationName}db.xpeppers.com.
       Type: CNAME
       ResourceRecords:
         - !GetAtt PostgresRDS.Endpoint.Address
-  LoadBalancerDNS:
+  LoadBalancerDNSWithVersion:
     Type: AWS::Route53::RecordSet
     Properties:
       HostedZoneName: xpeppers.com.
-      Name: !Sub new${Environment}.xpeppers.com.
-      Type: A
-      AliasTarget:
-        DNSName:
-          Fn::GetAtt:
-            - DiscourseElasticLoadBalancer
-            - DNSName
-        HostedZoneId:
-          Fn::GetAtt:
-            - DiscourseElasticLoadBalancer
-            - CanonicalHostedZoneID
-  LoadBalancerDNSUfficial:
-    Type: AWS::Route53::RecordSet
-    Properties:
-      HostedZoneName: xpeppers.com.
-      Name: !Sub ${Environment}.xpeppers.com.
+      Name: !Sub ${EnvironmentVersion}.${ApplicationName}.xpeppers.com.
       Type: A
       AliasTarget:
         DNSName:
