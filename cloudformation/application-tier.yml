@@ -1,0 +1,319 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Single machine in autoscaling 1:1 for simple test and simple purpose
+Parameters:
+  VpcId:
+    Type: String
+  SubnetIdA:
+    Type: String
+  SubnetIdB:
+    Type: String
+  InstanceName:
+    Type: String
+  SshCidrAllow:
+    Type: String
+    Description: IP Address to allow ssh
+    MinLength: '9'
+    MaxLength: '18'
+    AllowedPattern: "(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})/(\\d{1,2})"
+  InstanceType:
+    Description: EC2 instance type
+    Type: String
+    Default: t2.medium
+    AllowedValues:
+    - t2.nano
+    - t2.micro
+    - t2.small
+    - t2.medium
+    - t2.large
+    - m4.large
+    - m4.xlarge
+    - m4.2xlarge
+    - m4.4xlarge
+    - m4.10xlarge
+    - m3.medium
+    - m3.large
+    - m3.xlarge
+    - m3.2xlarge
+    - c4.large
+    - c4.xlarge
+    - c4.2xlarge
+    - c4.4xlarge
+    - c4.8xlarge
+    - c3.large
+    - c3.xlarge
+    - c3.2xlarge
+    - c3.4xlarge
+    - c3.8xlarge
+    ConstraintDescription: must be a valid EC2 instance type.
+  KeyName:
+    Description: The EC2 Key Pair to allow SSH access to the instances
+    Type: AWS::EC2::KeyPair::KeyName
+    ConstraintDescription: must be the name of an existing EC2 KeyPair.
+  AMIid:
+    Description: AMI id of silver discourse image
+    Type: AWS::EC2::Image::Id
+  CertificateARN:
+    Type: String
+    Description: Certificate ARN to associate with load balancer
+  ApplicationName:
+    Type: String
+  EnvironmentVersion:
+    Type: String
+Resources:
+
+# Instance profile
+  InstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Path: "/"
+      Roles:
+      - Ref: InstanceIAMRole
+  InstanceIAMRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - ec2.amazonaws.com
+          Action:
+          - sts:AssumeRole
+      Path: "/"
+      Policies:
+      - PolicyName: s3
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+            - s3:*
+            Resource:
+            - Fn::Join:
+              - ''
+              - - 'arn:aws:s3:::'
+                - "*"
+      - PolicyName: logs
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+            - logs:CreateLogGroup
+            - logs:CreateLogStream
+            - logs:PutLogEvents
+            - logs:DescribeLogStreams
+            Resource:
+            - arn:aws:logs:*:*:*
+      - PolicyName: route53
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+            - route53:ChangeResourceRecordSets
+            Resource: '*'
+      - PolicyName: metrics
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+            - cloudwatch:PutMetricData
+            - cloudwatch:GetMetricStatistics
+            - cloudwatch:ListMetrics
+            Resource:
+            - '*'
+
+#Load Balancing section
+  DiscourseElasticLoadBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Name: !Sub ALB-${ApplicationName}-${EnvironmentVersion}
+      SecurityGroups:
+      - !Ref LoadBalancerWebServerGroup
+      Subnets:
+        - !Ref SubnetIdA
+        - !Ref SubnetIdB
+  WebServerListenersHTTP:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref DiscourseElasticLoadBalancer
+      Port: '80'
+      Protocol: HTTP
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref TargetGrougRedirect
+  WebServerListenersHTTPS:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref DiscourseElasticLoadBalancer
+      Port: '443'
+      Protocol: HTTPS
+      Certificates:
+        - CertificateArn: !Ref CertificateARN
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref TargetGrougDiscourse
+  ElasticLoadBalancerInternalListenerHTTP:
+    Type: AWS::ElasticLoadBalancingV2::ListenerRule
+    Properties:
+      Actions:
+      - Type: forward
+        TargetGroupArn:
+          !Ref TargetGrougRedirect
+      Conditions:
+      - Field: path-pattern
+        Values:
+        - "/*"
+      ListenerArn:
+        !Ref WebServerListenersHTTP
+      Priority: 2
+  ElasticLoadBalancerInternalListenerHTTPS:
+    Type: AWS::ElasticLoadBalancingV2::ListenerRule
+    Properties:
+      Actions:
+      - Type: forward
+        TargetGroupArn:
+          !Ref TargetGrougDiscourse
+      Conditions:
+      - Field: path-pattern
+        Values:
+        - "/*"
+      ListenerArn:
+        !Ref WebServerListenersHTTPS
+      Priority: 1
+  LoadBalancerWebServerGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Enable HTTP and HTTPS access
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: '80'
+        ToPort: '80'
+        CidrIp: 0.0.0.0/0
+      - IpProtocol: tcp
+        FromPort: '443'
+        ToPort: '443'
+        CidrIp: 0.0.0.0/0
+  TargetGrougDiscourse:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      HealthCheckIntervalSeconds: 10
+      UnhealthyThresholdCount: 3
+      HealthCheckPath: "/login"
+      HealthCheckPort: '80'
+      Name: !Sub tg-${ApplicationName}-${EnvironmentVersion}
+      Port: 80
+      Protocol: HTTP
+      VpcId: !Ref VpcId
+  TargetGrougRedirect:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      HealthCheckIntervalSeconds: 10
+      UnhealthyThresholdCount: 3
+      HealthCheckPath: "/"
+      HealthCheckPort: '81'
+      Matcher:
+        HttpCode: 200-399
+      Name: !Sub tg-${ApplicationName}-redirect-${EnvironmentVersion}
+      Port: 81
+      Protocol: HTTP
+      VpcId: !Ref VpcId
+
+  AutoScalingGroup:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    Properties:
+      Tags:
+      - Key: Name
+        Value:
+          !Sub ${ApplicationName}-${InstanceName}-${EnvironmentVersion}
+        PropagateAtLaunch: 'true'
+      LaunchConfigurationName:
+        Ref: LaunchConfiguration
+      MinSize: 1
+      MaxSize: 1
+      VPCZoneIdentifier:
+        - !Ref SubnetIdA
+      TargetGroupARNs:
+        - !Ref TargetGrougDiscourse
+        - !Ref TargetGrougRedirect
+  LaunchConfiguration:
+    Type: AWS::AutoScaling::LaunchConfiguration
+    Properties:
+      IamInstanceProfile: !Ref InstanceProfile
+      KeyName:
+        Ref: KeyName
+      ImageId: !Ref AMIid
+      SecurityGroups:
+        - Ref: InstanceSecurityGroup
+        - Ref: SSHSecurityGroup
+      InstanceType:
+        Ref: InstanceType
+      UserData:
+        Fn::Base64:
+          !Sub |
+            #!/bin/bash -x
+            echo ok >> /tmp/ok
+      BlockDeviceMappings:
+        - DeviceName: /dev/sda1
+          Ebs:
+              VolumeType: gp2
+              VolumeSize: 20
+
+  InstanceSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      VpcId:
+        !Ref VpcId
+      GroupDescription: Enable HTTP and HTTPS
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: '80'
+        ToPort: '81'
+        SourceSecurityGroupId: !Ref LoadBalancerWebServerGroup
+      - IpProtocol: tcp
+        FromPort: '443'
+        ToPort: '443'
+        SourceSecurityGroupId: !Ref LoadBalancerWebServerGroup
+
+  SSHSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      VpcId:
+        !Ref VpcId
+      GroupDescription: Enable SSH access and HTTP from the load balancer only
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: '22'
+        ToPort: '22'
+        CidrIp:
+          Ref: SshCidrAllow
+
+#Route53
+  LoadBalancerDNSWithVersion:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneName: xpeppers.com.
+      Name: !Sub ${EnvironmentVersion}.${ApplicationName}.xpeppers.com.
+      Type: A
+      AliasTarget:
+        DNSName:
+          Fn::GetAtt:
+            - DiscourseElasticLoadBalancer
+            - DNSName
+        HostedZoneId:
+          Fn::GetAtt:
+            - DiscourseElasticLoadBalancer
+            - CanonicalHostedZoneID
+
+Outputs:
+  InstanceSecurityGroup:
+    Description: Security group ec2
+    Value:
+      Fn::GetAtt:
+      - InstanceSecurityGroup
+      - GroupId

@@ -1,0 +1,77 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Postgres RDS for discourse
+Parameters:
+  VpcId:
+    Type: String
+  SubnetIdA:
+    Type: String
+  SubnetIdB:
+    Type: String
+  DBInstanceType:
+    Description: RDS database instance
+    Type: String
+  DBPassword:
+    Description: Password for database
+    Type: String
+    NoEcho: true
+  RDSSnapshotName:
+    Description: Name of the RDS snapshot from which create RDS
+    Type: String
+  VPCcidr:
+    Description: CIDR of the VPC
+    Type: String
+  ApplicationName:
+    Type: String
+  EnvironmentVersion:
+    Type: String
+
+Conditions:
+  RecoverDBSnapshot:
+    !Not [!Equals [!Ref RDSSnapshotName, '']]
+
+Resources:
+
+  DBSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupDescription: "Subnet for RDS"
+      SubnetIds:
+        - !Ref SubnetIdA
+        - !Ref SubnetIdB
+  DBSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: "Security group for RDS"
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: '5432'
+        ToPort: '5432'
+        CidrIp: !Ref VPCcidr
+  PostgresRDS:
+    Type: "AWS::RDS::DBInstance"
+    DeletionPolicy : "Retain"
+    Properties:
+      DBSnapshotIdentifier: !If [ RecoverDBSnapshot, !Ref RDSSnapshotName, !Ref "AWS::NoValue"]
+      DBInstanceIdentifier: !Sub ${ApplicationName}-${EnvironmentVersion}
+      AllocatedStorage: "10"
+      DBInstanceClass: !Ref DBInstanceType
+      Engine: "postgres"
+      EngineVersion: "9.5.15"
+      MasterUsername: discourse
+      MasterUserPassword: !Ref DBPassword
+      DBSubnetGroupName: !Ref DBSubnetGroup
+      VPCSecurityGroups:
+        - !Ref DBSecurityGroup
+
+#Route53
+  PostgresRDSdns:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneName: xpeppers.com.
+      TTL: 300
+      Name: !Sub ${EnvironmentVersion}.${ApplicationName}db.xpeppers.com.
+      Type: CNAME
+      ResourceRecords:
+        - !GetAtt PostgresRDS.Endpoint.Address
