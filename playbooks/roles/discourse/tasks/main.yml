@@ -17,9 +17,3 @@
 - name: fix discourse permissions
   file: path={{ discourse_location }} owner=discourse group=discourse recurse=yes
   register: discourse_copied
-
-- name: Remove default nginx configuration file
-  file: path=/etc/nginx/sites-available/default state=absent
-
-- name: Restart nginx
-  service: name=nginx state=restarted
