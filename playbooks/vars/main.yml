@@ -8,23 +8,3 @@ install_cfn_bootstrap: false
 
 # where to install discourse
 discourse_location: /var/discourse
-
-nginx_vhosts:
-  - server_name: discoursetest.xpeppers.com
-    listen: "81"
-    extra_parameters: |
-      location / {
-          proxy_pass http://127.0.0.1:80/;
-      }
-      if ($http_x_forwarded_proto != 'https') {
-       rewrite ^ https://$host$request_uri? permanent;
-      }
-  - server_name: discourse.xpeppers.com
-    listen: "81"
-    extra_parameters: |
-      location / {
-          proxy_pass http://127.0.0.1:80/;
-      }
-      if ($http_x_forwarded_proto != 'https') {
-       rewrite ^ https://$host$request_uri? permanent;
-      }
