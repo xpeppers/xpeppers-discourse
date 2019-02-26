@@ -144,8 +144,14 @@ Resources:
       Port: '80'
       Protocol: HTTP
       DefaultActions:
-        - Type: forward
-          TargetGroupArn: !Ref TargetGrougRedirect
+        - Type: redirect
+          RedirectConfig:
+            Protocol: HTTPS
+            Host: '#{host}'
+            Query: '#{query}'
+            Path: /#{path}
+            Port: '443'
+            StatusCode: HTTP_301
   WebServerListenersHTTPS:
     Type: AWS::ElasticLoadBalancingV2::Listener
     Properties:
@@ -157,20 +163,6 @@ Resources:
       DefaultActions:
         - Type: forward
           TargetGroupArn: !Ref TargetGrougDiscourse
-  ElasticLoadBalancerInternalListenerHTTP:
-    Type: AWS::ElasticLoadBalancingV2::ListenerRule
-    Properties:
-      Actions:
-      - Type: forward
-        TargetGroupArn:
-          !Ref TargetGrougRedirect
-      Conditions:
-      - Field: path-pattern
-        Values:
-        - "/*"
-      ListenerArn:
-        !Ref WebServerListenersHTTP
-      Priority: 2
   ElasticLoadBalancerInternalListenerHTTPS:
     Type: AWS::ElasticLoadBalancingV2::ListenerRule
     Properties:
