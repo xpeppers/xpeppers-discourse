@@ -1,6 +1,8 @@
 ---
 - hosts: all
-  sudo: yes
+  become: yes
+  vars:
+    ansible_user: ubuntu
   vars_files:
     - vars/main.yml
   roles:
