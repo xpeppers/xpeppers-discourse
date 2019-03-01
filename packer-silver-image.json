@@ -1,24 +1,28 @@
 {
+  "variables": {
+    "aws_profile": "{{env `AWS_PROFILE`}}",
+    "aws_mfa": "{{env `AWS_MFA`}}"
+  },
   "builders": [
     {
       "type": "amazon-ebs",
-      "access_key": "{{user `aws_access_key`}}",
-      "secret_key": "{{user `aws_secret_key`}}",
+      "mfa_code": "{{ user `aws_mfa`}}",
+      "profile": "{{ user `aws_profile`}}",
       "region": "eu-west-1",
-      "source_ami": "ami-a8d2d7ce",
-      "instance_type": "t2.medium",
+      "source_ami": "ami-08d658f84a6d84a80",
+      "instance_type": "t2.xlarge",
       "ssh_username": "ubuntu",
       "ami_name": "discourse-{{isotime \"20060102-1504\"}}",
       "vpc_id": "vpc-4b9e772e",
       "subnet_id": "subnet-0230dc75",
-"launch_block_device_mappings": [
-    {
-      "device_name": "/dev/sda1",
-      "volume_size": 16,
-      "volume_type": "gp2",
-      "delete_on_termination": true
-    }
-  ]
+      "launch_block_device_mappings": [
+        {
+          "device_name": "/dev/sda1",
+          "volume_size": 16,
+          "volume_type": "gp2",
+          "delete_on_termination": true
+        }
+      ]
     }
   ],
   "provisioners": [
@@ -29,7 +33,7 @@
     {
       "type": "ansible",
       "playbook_file": "./playbooks/main.yml",
-      "user" : "ubuntu"
+      "user": "ubuntu"
     },
     {
       "type": "shell",
