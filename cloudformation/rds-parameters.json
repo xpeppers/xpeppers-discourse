@@ -1,0 +1,38 @@
+[
+  {
+    "ParameterKey": "VpcId",
+    "ParameterValue": "",
+  },
+  {
+    "ParameterKey": "SubnetIdA",
+    "ParameterValue": "",
+  },
+  {
+    "ParameterKey": "SubnetIdB",
+    "ParameterValue": "",
+  },
+  {
+    "ParameterKey": "DBInstanceType",
+    "ParameterValue": "",
+  },
+  {
+    "ParameterKey": "DBPassword",
+    "ParameterValue": "",
+  },
+  {
+    "ParameterKey": "RDSSnapshotName",
+    "ParameterValue": "",
+  },
+  {
+    "ParameterKey": "ApplicationName",
+    "ParameterValue": "",
+  },
+  {
+    "ParameterKey": "VPCcidr",
+    "ParameterValue": "",
+  },
+  {
+    "ParameterKey": "EnvironmentVersion",
+    "ParameterValue": ""
+  }
+]

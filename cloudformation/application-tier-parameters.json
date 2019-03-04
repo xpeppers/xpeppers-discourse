@@ -1,0 +1,46 @@
+[
+  {
+    "ParameterKey": "VpcId",
+    "ParameterValue": "",
+  },
+  {
+    "ParameterKey": "SubnetIdA",
+    "ParameterValue": "",
+  },
+  {
+    "ParameterKey": "SubnetIdB",
+    "ParameterValue": "",
+  },
+  {
+    "ParameterKey": "InstanceName",
+    "ParameterValue": "",
+  },
+  {
+    "ParameterKey": "SshCidrAllow",
+    "ParameterValue": "",
+  },
+  {
+    "ParameterKey": "InstanceType",
+    "ParameterValue": "",
+  },
+  {
+    "ParameterKey": "KeyName",
+    "ParameterValue": "",
+  },
+  {
+    "ParameterKey": "AMIid",
+    "ParameterValue": "",
+  },
+  {
+    "ParameterKey": "CertificateARN",
+    "ParameterValue": "",
+  },
+  {
+    "ParameterKey": "ApplicationName",
+    "ParameterValue": "",
+  },
+  {
+    "ParameterKey": "EnvironmentVersion",
+    "ParameterValue": ""
+  }
+]
