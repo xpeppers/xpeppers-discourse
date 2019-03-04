@@ -71,7 +71,7 @@ Resources:
     Properties:
       HostedZoneName: xpeppers.com.
       TTL: 300
-      Name: !Sub ${EnvironmentVersion}.${ApplicationName}db.xpeppers.com.
+      Name: !Sub ${ApplicationName}db-${EnvironmentVersion}.xpeppers.com.
       Type: CNAME
       ResourceRecords:
         - !GetAtt PostgresRDS.Endpoint.Address
