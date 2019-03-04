@@ -202,19 +202,6 @@ Resources:
       Port: 80
       Protocol: HTTP
       VpcId: !Ref VpcId
-  TargetGrougRedirect:
-    Type: AWS::ElasticLoadBalancingV2::TargetGroup
-    Properties:
-      HealthCheckIntervalSeconds: 10
-      UnhealthyThresholdCount: 3
-      HealthCheckPath: "/"
-      HealthCheckPort: '81'
-      Matcher:
-        HttpCode: 200-399
-      Name: !Sub tg-${ApplicationName}-redirect-${EnvironmentVersion}
-      Port: 81
-      Protocol: HTTP
-      VpcId: !Ref VpcId
 
   AutoScalingGroup:
     Type: AWS::AutoScaling::AutoScalingGroup
@@ -232,7 +219,6 @@ Resources:
         - !Ref SubnetIdA
       TargetGroupARNs:
         - !Ref TargetGrougDiscourse
-        - !Ref TargetGrougRedirect
   LaunchConfiguration:
     Type: AWS::AutoScaling::LaunchConfiguration
     Properties:
