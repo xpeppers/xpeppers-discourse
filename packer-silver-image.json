@@ -9,16 +9,16 @@
       "mfa_code": "{{ user `aws_mfa`}}",
       "profile": "{{ user `aws_profile`}}",
       "region": "eu-west-1",
-      "source_ami": "ami-08d658f84a6d84a80",
+      "source_ami": "ami-06358f49b5839867c",
       "instance_type": "t2.xlarge",
       "ssh_username": "ubuntu",
       "ami_name": "discourse-{{isotime \"20060102-1504\"}}",
-      "vpc_id": "vpc-4b9e772e",
-      "subnet_id": "subnet-0230dc75",
+      "vpc_id": "vpc-0a54db76a27aa0482",
+      "subnet_id": "subnet-035039620a77ba1ea",
       "launch_block_device_mappings": [
         {
           "device_name": "/dev/sda1",
-          "volume_size": 16,
+          "volume_size": 20,
           "volume_type": "gp2",
           "delete_on_termination": true
         }
@@ -28,7 +28,15 @@
   "provisioners": [
     {
       "type": "shell",
-      "inline": "sudo apt-get update && sudo apt-get install --yes ansible"
+      "inline": "sudo apt-get update && sudo apt-get upgrade --yes"
+    },
+    {
+      "type": "shell",
+      "inline": "sudo apt-get install python --yes"
+    },
+    {
+      "type": "shell",
+      "inline": "sudo apt-get install --yes ansible"
     },
     {
       "type": "ansible",

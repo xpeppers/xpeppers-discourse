@@ -4,7 +4,7 @@ set -e
 
 PEM=$1
 if [ -z "$PEM" ];then
-  PEM="~/.ssh/xpeppers/discourse.pem"
+  PEM="~/.ssh/id_rsa"
 fi
 
 # discourse_up_to_date=$(cd playbooks/roles/discourse/files/discourse; git status -uno | grep up-to-date)

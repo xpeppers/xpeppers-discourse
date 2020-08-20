@@ -53,7 +53,7 @@ Resources:
     Type: "AWS::RDS::DBInstance"
     DeletionPolicy : "Retain"
     Properties:
-      DBSnapshotIdentifier: !If [ RecoverDBSnapshot, !Ref RDSSnapshotName, !Ref "AWS::NoValue"]
+      DBSnapshotIdentifier: !If [ RecoverDBSnapshot, !Ref RDSSnapshotName, !Ref "AWS::NoValue" ]
       DBInstanceIdentifier: !Sub ${ApplicationName}-${EnvironmentVersion}
       AllocatedStorage: "10"
       DBInstanceClass: !Ref DBInstanceType

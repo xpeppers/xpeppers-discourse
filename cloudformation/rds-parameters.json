@@ -1,38 +1,38 @@
 [
   {
     "ParameterKey": "VpcId",
-    "ParameterValue": "",
-  },
+    "ParameterValue": "vpc-0a54db76a27aa0482"
+    },
   {
     "ParameterKey": "SubnetIdA",
-    "ParameterValue": "",
+    "ParameterValue": "subnet-0dbd90018ad8411ce"
   },
   {
     "ParameterKey": "SubnetIdB",
-    "ParameterValue": "",
+    "ParameterValue": "subnet-0ec169587c30647bc"
   },
   {
     "ParameterKey": "DBInstanceType",
-    "ParameterValue": "",
+    "ParameterValue": "db.t2.micro"
   },
   {
     "ParameterKey": "DBPassword",
-    "ParameterValue": "",
+    "ParameterValue": "kndf56as9-(0g"
   },
   {
     "ParameterKey": "RDSSnapshotName",
-    "ParameterValue": "",
+    "ParameterValue": "snapshot-passaggio-a-sso"
   },
   {
     "ParameterKey": "ApplicationName",
-    "ParameterValue": "",
+    "ParameterValue": "discourse"
   },
   {
     "ParameterKey": "VPCcidr",
-    "ParameterValue": "",
+    "ParameterValue": "172.16.1.0/24"
   },
   {
     "ParameterKey": "EnvironmentVersion",
-    "ParameterValue": ""
+    "ParameterValue": "v4"
   }
 ]
