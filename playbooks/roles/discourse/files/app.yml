@@ -51,10 +51,10 @@ params:
 
 env:
 
-  DISCOURSE_DB_USERNAME: discourse
-  DISCOURSE_DB_PASSWORD: kndf56as9-(0g
-  DISCOURSE_DB_HOST: discoursedb-v4.xpeppers.com
-  DISCOURSE_DB_NAME: discourse
+  DISCOURSE_DB_USERNAME: ****
+  DISCOURSE_DB_PASSWORD: ****
+  DISCOURSE_DB_HOST: ****
+  DISCOURSE_DB_NAME: ****
 
   LANG: en_US.UTF-8
   # DISCOURSE_DEFAULT_LOCALE: en
@@ -66,16 +66,16 @@ env:
 
   ## TODO: List of comma delimited emails that will be made admin and developer
   ## on initial signup example 'user1@example.com,user2@example.com'
-  DISCOURSE_DEVELOPER_EMAILS: 'christian.fei@xpeppers.com'
+  DISCOURSE_DEVELOPER_EMAILS: '****'
 
   ## TODO: The domain name this Discourse instance will respond to
-  DISCOURSE_HOSTNAME: 'discourse.xpeppers.com'
+  DISCOURSE_HOSTNAME: '****'
 
   ## TODO: The mailserver this Discourse instance will use
-  DISCOURSE_SMTP_ADDRESS: email-smtp.eu-west-1.amazonaws.com
+  DISCOURSE_SMTP_ADDRESS: ****
   DISCOURSE_SMTP_PORT: 587
-  DISCOURSE_SMTP_USER_NAME: AKIAIO7DCTXXRERDA3VQ
-  DISCOURSE_SMTP_PASSWORD: AlsOPNqIOoUhIkuugfBD4pj0BR9Rigarc1DtjW92HMgH
+  DISCOURSE_SMTP_USER_NAME: ****
+  DISCOURSE_SMTP_PASSWORD: ****
   DISCOURSE_SMTP_ENABLE_START_TLS: true
   DISCOURSE_SMTP_AUTHENTICATION: "login"
 
@@ -104,8 +104,8 @@ hooks:
           - git clone https://github.com/gdpelican/babble.git
           - git clone https://github.com/cpradio/discourse-plugin-checklist.git
           - git clone https://github.com/discourse/discourse-plugin-office365-auth.git
-          - sed -i -e "s+\\/common\\/oauth2\\/v2.0\\/authorize+\\/f87a7640-3b94-4bbd-b5fa-b4c15947cf56\\/oauth2\\/v2.0\\/authorize+g" discourse-plugin-office365-auth/omniauth-microsoft365.rb
-          - sed -i -e "s+\\/common\\/oauth2\\/v2.0\\/token+\\/f87a7640-3b94-4bbd-b5fa-b4c15947cf56\\/oauth2\\/v2.0\\/token+g" discourse-plugin-office365-auth/omniauth-microsoft365.rb
+          - sed -i -e "s+\\/common\\/oauth2\\/v2.0\\/authorize+\\/****\\/oauth2\\/v2.0\\/authorize+g" discourse-plugin-office365-auth/omniauth-microsoft365.rb
+          - sed -i -e "s+\\/common\\/oauth2\\/v2.0\\/token+\\/****\\/oauth2\\/v2.0\\/token+g" discourse-plugin-office365-auth/omniauth-microsoft365.rb
 
 ## Remember, this is YAML syntax - you can only have one block with a name
 run:
