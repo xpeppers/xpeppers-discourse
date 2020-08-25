@@ -1,7 +1,8 @@
 {
   "variables": {
     "aws_profile": "{{env `AWS_PROFILE`}}",
-    "aws_mfa": "{{env `AWS_MFA`}}"
+    "aws_mfa": "{{env `AWS_MFA`}}",
+    "db_url": "{{env `DB_URL`}}"
   },
   "builders": [
     {
@@ -9,12 +10,12 @@
       "mfa_code": "{{ user `aws_mfa`}}",
       "profile": "{{ user `aws_profile`}}",
       "region": "eu-west-1",
-      "source_ami": "ami-06358f49b5839867c",
-      "instance_type": "t2.xlarge",
+      "source_ami": "ami-06f7efb202729c3c5",
+      "instance_type": "t3.xlarge",
       "ssh_username": "ubuntu",
       "ami_name": "discourse-{{isotime \"20060102-1504\"}}",
       "vpc_id": "vpc-0a54db76a27aa0482",
-      "subnet_id": "subnet-035039620a77ba1ea",
+      "subnet_id": "subnet-078db29b70c39160d",
       "launch_block_device_mappings": [
         {
           "device_name": "/dev/sda1",
@@ -27,25 +28,17 @@
   ],
   "provisioners": [
     {
-      "type": "shell",
-      "inline": "sudo apt-get update && sudo apt-get upgrade --yes"
+      "type": "file",
+      "source": "app.yml",
+      "destination": "/home/ubuntu/app.yml"
     },
     {
       "type": "shell",
-      "inline": "sudo apt-get install python --yes"
-    },
-    {
-      "type": "shell",
-      "inline": "sudo apt-get install --yes ansible"
-    },
-    {
-      "type": "ansible",
-      "playbook_file": "./playbooks/main.yml",
-      "user": "ubuntu"
-    },
-    {
-      "type": "shell",
-      "inline": "cd /var/discourse && sudo ./launcher rebuild app"
+      "script": "packer-provisioning-script.sh",
+      "environment_vars":
+        [ 
+          "DB_URL={{ user `db_url`}}"
+        ]
     }
   ]
 }
