@@ -1,7 +1,0 @@
-#!/bin/sh
-
-ansible-playbook playbooks/only_discourse.yml\
-  -i inventory/vagrant_hosts\
-  --private-key ~/.vagrant.d/insecure_private_key\
-  -u vagrant\
-  -vvvv

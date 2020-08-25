@@ -1,6 +1,0 @@
-[submodule "playbooks/roles/ansible-role-aws-tools"]
-	path = playbooks/roles/ansible-role-aws-tools
-	url = https://github.com/xpeppers/ansible-role-aws-tools.git
-[submodule "playbooks/roles/docker"]
-	path = playbooks/roles/docker
-	url = https://github.com/geerlingguy/ansible-role-docker.git
