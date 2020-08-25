@@ -18,6 +18,10 @@ Parameters:
   RDSSnapshotName:
     Description: Name of the RDS snapshot from which create RDS
     Type: String
+  PostgresEngineVersion:
+    Type: String
+    Description: Version of the postgres server engine
+    Default: "11.1"
   VPCcidr:
     Description: CIDR of the VPC
     Type: String
@@ -27,7 +31,7 @@ Parameters:
     Type: String
 
 Conditions:
-  RecoverDBSnapshot:
+  HasSnapshot:
     !Not [!Equals [!Ref RDSSnapshotName, '']]
 
 Resources:
@@ -53,14 +57,23 @@ Resources:
     Type: "AWS::RDS::DBInstance"
     DeletionPolicy : "Retain"
     Properties:
-      DBSnapshotIdentifier: !If [ RecoverDBSnapshot, !Ref RDSSnapshotName, !Ref "AWS::NoValue" ]
+      DBSnapshotIdentifier: !If [ HasSnapshot, !Ref RDSSnapshotName, !Ref "AWS::NoValue"]
       DBInstanceIdentifier: !Sub ${ApplicationName}-${EnvironmentVersion}
       AllocatedStorage: "10"
       DBInstanceClass: !Ref DBInstanceType
       Engine: "postgres"
-      EngineVersion: "9.5.15"
-      MasterUsername: discourse
-      MasterUserPassword: !Ref DBPassword
+      EngineVersion: !Ref PostgresEngineVersion
+      AllowMajorVersionUpgrade: True
+      MasterUsername:
+        !If
+          - HasSnapshot
+          - !Ref AWS::NoValue
+          - 'root'
+      MasterUserPassword:
+        !If
+          - HasSnapshot
+          - !Ref AWS::NoValue
+          - !Ref DBPassword
       DBSubnetGroupName: !Ref DBSubnetGroup
       VPCSecurityGroups:
         - !Ref DBSecurityGroup
