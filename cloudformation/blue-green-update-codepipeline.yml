@@ -54,6 +54,8 @@ Resources:
             Principal:
               Service:
                 - codebuild.amazonaws.com
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/PowerUserAccess'
       Policies:
         -
           PolicyName: BuildCloudformationPolicy
@@ -119,6 +121,7 @@ Resources:
                 - latestDBversion
                 - newversion
                 - snapshotDNname
+                - databaseURL
             phases:
               install:
                 commands:
@@ -128,10 +131,57 @@ Resources:
                   - aws rds describe-db-instances --region ${AWS::Region} --query 'DBInstances[*].DBInstanceIdentifier' | grep discourse | tr -d ' ",discourse\-v' | sort -Vr | head -n 1
                   - latestDBversion=`aws rds describe-db-instances --region ${AWS::Region} --query 'DBInstances[*].DBInstanceIdentifier' | grep discourse | tr -d ' ",discourse\-v' | sort -Vr | head -n 1`
                   - newversion=$((latestDBversion+1))
+                  - databaseURL="discoursedb-v$newversion.xpeppers.com."
                   - snapshotDNname="discourse-version-$latestDBversion-day-`date +%Y%m%d`"
                   - echo "Latest version of discourse db is $latestDBversion. Start creating snapshot $snapshotDNname"
                   - aws rds create-db-snapshot --region ${AWS::Region} --db-instance-identifier discourse-v$latestDBversion --db-snapshot-identifier $snapshotDNname
                   - aws rds wait db-snapshot-completed --region ${AWS::Region} --db-snapshot-identifier $snapshotDNname
+
+  CodeBuildPacker:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Name: !Sub ${ProjectName}-create-ami
+      Artifacts:
+        Type: CODEPIPELINE
+      Environment:
+        Type: LINUX_CONTAINER
+        ComputeType: !Ref CodeBuildComputeType
+        Image: !Sub '${CodeBuildEnvironment}'
+      ServiceRole: !GetAtt CodeBuildServiceRole.Arn
+      Source:
+        Type: CODEPIPELINE
+        BuildSpec: 
+          !Sub |
+            version: 0.2
+            env:
+              exported-variables:
+                - AMIid
+              variables:
+                DNSNAME: $DNSNAME
+            phases:
+              pre_build:
+                commands:
+                  - echo "Installing Packer"
+                  - curl -o packer.zip https://releases.hashicorp.com/packer/1.6.1/packer_1.6.1_linux_amd64.zip && unzip packer.zip
+                  - echo "Installing JQ"
+                  - curl -o jq https://stedolan.github.io/jq/download/linux64/jq
+                  - chmod +x ./jq
+                  - yum install -y git
+                  - export USER=root
+              build:
+                commands:
+                  # CodeBuild leverages IAM Task Role but Packer doesn't support it yet
+                  # More info: https://github.com/mitchellh/packer/issues/4279
+                  - echo "Configuring AWS credentials"
+                  - curl -qL 169.254.170.2/$AWS_CONTAINER_CREDENTIALS_RELATIVE_URI > aws_credentials.json
+                  - aws configure set region ${AWS::Region}
+                  - aws configure set aws_access_key_id `./jq -r '.AccessKeyId' aws_credentials.json`
+                  - aws configure set aws_secret_access_key `./jq -r '.SecretAccessKey' aws_credentials.json`
+                  - aws configure set aws_session_token `./jq -r '.Token' aws_credentials.json`
+                  - aws s3 cp s3://discourse-pipeline/app.yml .
+                  - AWS_PROFILE=default AWS_MFA=111111 DB_URL=$DBurl ./packer build -color=false -machine-readable packer-silver-image.json | tee build.log
+                  - AMIid=`grep 'artifact,0,id' build.log | cut -d, -f6 | cut -d':' -f2`
+                  - aws s3 cp build.log s3://discourse-pipeline
 
   PipelineExecutionRole:
     Type: 'AWS::IAM::Role'
@@ -164,6 +214,7 @@ Resources:
                 Effect: Allow
                 Resource:
                   - !GetAtt CodeBuildCreateSnapshot.Arn
+                  - !GetAtt CodeBuildPacker.Arn
         - PolicyName: CodePipelineS3ArtifactAccess
           PolicyDocument:
             Version: '2012-10-17'
@@ -220,6 +271,7 @@ Resources:
               Repo: !Ref GitHubRepoName
               Branch: master
               OAuthToken: !Ref GitHubToken
+              PollForSourceChanges: false
             OutputArtifacts:
             - Name: SourceZip
             RunOrder: 1
@@ -267,3 +319,56 @@ Resources:
             OutputArtifacts:
             - Name: CreateRDSOutput
             RunOrder: 3
+        -
+          Name: AMIcreation
+          Actions:
+          -
+            Name: AMIcreation
+            Namespace: AMIcreation
+            ActionTypeId:
+              Category: Build
+              Owner: AWS
+              Provider: CodeBuild
+              Version: 1
+            Configuration:
+              ProjectName: !Ref CodeBuildPacker
+              EnvironmentVariables: !Sub |
+                [
+                  {
+                      "name": "DBurl",
+                      "value": "#{RDSSnapshot.databaseURL}"
+                  }
+                ]
+            InputArtifacts:
+            - Name: SourceZip
+            RunOrder: 4
+        -
+          Name: CreateApplicationTier
+          Actions:
+          -
+            Name: ApplicationTierStack
+            Namespace: ApplicationTierStack
+            ActionTypeId:
+              Category: Deploy
+              Owner: AWS
+              Provider: CloudFormation
+              Version: 1
+            Configuration:
+              ActionMode: CREATE_UPDATE
+              StackName: !Sub discourse-application-tier-v#{RDSSnapshot.newversion}
+              Capabilities: CAPABILITY_NAMED_IAM
+              RoleArn: !GetAtt CloudFormationRole.Arn
+              TemplatePath: SourceZip::cloudformation/application-tier.yml
+              TemplateConfiguration: !Sub "SourceZip::cloudformation/application-tier-parameters-cfn.json"
+              ParameterOverrides: !Sub |
+                {
+                  "AMIid": "#{AMIcreation.AMIid}",
+                  "EnvironmentVersion": "v#{RDSSnapshot.newversion}"
+                }
+            # {
+            #   "EnvironmentVersion": "v#{RDSSnapshot.newversion}",
+            #   "RDSSnapshotName": "#{RDSSnapshot.snapshotDNname}"
+            # }
+            InputArtifacts:
+            - Name: SourceZip
+            RunOrder: 5
