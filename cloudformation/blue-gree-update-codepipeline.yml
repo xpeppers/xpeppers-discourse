@@ -114,6 +114,11 @@ Resources:
         BuildSpec: 
           !Sub |
             version: 0.2
+            env:
+              exported-variables:
+                - latestDBversion
+                - newversion
+                - snapshotDNname
             phases:
               install:
                 commands:
@@ -122,6 +127,7 @@ Resources:
                 commands:
                   - aws rds describe-db-instances --region ${AWS::Region} --query 'DBInstances[*].DBInstanceIdentifier' | grep discourse | tr -d ' ",discourse\-v' | sort -Vr | head -n 1
                   - latestDBversion=`aws rds describe-db-instances --region ${AWS::Region} --query 'DBInstances[*].DBInstanceIdentifier' | grep discourse | tr -d ' ",discourse\-v' | sort -Vr | head -n 1`
+                  - newversion=$((latestDBversion+1))
                   - snapshotDNname="discourse-version-$latestDBversion-day-`date +%Y%m%d`"
                   - echo "Latest version of discourse db is $latestDBversion. Start creating snapshot $snapshotDNname"
                   - aws rds create-db-snapshot --region ${AWS::Region} --db-instance-identifier discourse-v$latestDBversion --db-snapshot-identifier $snapshotDNname
@@ -171,7 +177,24 @@ Resources:
                 Resource:
                   - !Sub arn:aws:s3:::${BucketName}
                   - !Sub arn:aws:s3:::${BucketName}/*
-
+        - PolicyName: CloudformationPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Action:
+                  - cloudformation:CreateStack
+                  - cloudformation:DeleteStack
+                  - cloudformation:DescribeStacks
+                  - cloudformation:UpdateStack
+                  - cloudformation:CreateChangeSet
+                  - cloudformation:DeleteChangeSet
+                  - cloudformation:DescribeChangeSet
+                  - cloudformation:ExecuteChangeSet
+                  - cloudformation:SetStackPolicy
+                  - cloudformation:ValidateTemplate
+                  - iam:PassRole
+                Effect: Allow
+                Resource: "*"
 
   Pipeline:
     Type: AWS::CodePipeline::Pipeline
@@ -215,6 +238,32 @@ Resources:
               ProjectName: !Ref CodeBuildCreateSnapshot
             InputArtifacts:
             - Name: SourceZip
-            OutputArtifacts:
-            - Name: RDSsnapshotOutput
             RunOrder: 2
+        -
+          Name: CreateRDS
+          Actions:
+          -
+            Name: RDSstack
+            Namespace: RDSstack
+            ActionTypeId:
+              Category: Deploy
+              Owner: AWS
+              Provider: CloudFormation
+              Version: 1
+            Configuration:
+              ActionMode: CREATE_UPDATE
+              StackName: !Sub discourse-rds-v#{RDSSnapshot.newversion}
+              Capabilities: CAPABILITY_NAMED_IAM
+              RoleArn: !GetAtt CloudFormationRole.Arn
+              TemplatePath: SourceZip::cloudformation/rds.yml
+              TemplateConfiguration: !Sub "SourceZip::cloudformation/rds-parameters-cfn.json"
+              ParameterOverrides: !Sub |
+                {
+                  "EnvironmentVersion": "v#{RDSSnapshot.newversion}",
+                  "RDSSnapshotName": "#{RDSSnapshot.snapshotDNname}"
+                }
+            InputArtifacts:
+            - Name: SourceZip
+            OutputArtifacts:
+            - Name: CreateRDSOutput
+            RunOrder: 3
