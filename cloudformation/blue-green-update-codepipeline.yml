@@ -18,6 +18,10 @@ Parameters:
     Type: String
   CodeBuildEnvironment:
     Type: String
+  DomainName:
+    Type: String
+  NotificationMail:
+    Type: String
 
 Resources:
   CloudFormationRole:
@@ -131,7 +135,7 @@ Resources:
                   - aws rds describe-db-instances --region ${AWS::Region} --query 'DBInstances[*].DBInstanceIdentifier' | grep discourse | tr -d ' ",discourse\-v' | sort -Vr | head -n 1
                   - latestDBversion=`aws rds describe-db-instances --region ${AWS::Region} --query 'DBInstances[*].DBInstanceIdentifier' | grep discourse | tr -d ' ",discourse\-v' | sort -Vr | head -n 1`
                   - newversion=$((latestDBversion+1))
-                  - databaseURL="discoursedb-v$newversion.xpeppers.com."
+                  - databaseURL="discoursedb-v$newversion.${DomainName}."
                   - snapshotDNname="discourse-version-$latestDBversion-day-`date +%Y%m%d`"
                   - echo "Latest version of discourse db is $latestDBversion. Start creating snapshot $snapshotDNname"
                   - aws rds create-db-snapshot --region ${AWS::Region} --db-instance-identifier discourse-v$latestDBversion --db-snapshot-identifier $snapshotDNname
@@ -181,7 +185,32 @@ Resources:
                   - aws s3 cp s3://discourse-pipeline/app.yml .
                   - AWS_PROFILE=default AWS_MFA=111111 DB_URL=$DBurl ./packer build -color=false -machine-readable packer-silver-image.json | tee build.log
                   - AMIid=`grep 'artifact,0,id' build.log | cut -d, -f6 | cut -d':' -f2`
-                  - aws s3 cp build.log s3://discourse-pipeline
+
+  PipelineNotificationTopic:
+        Type: "AWS::SNS::Topic"
+        Properties:
+          TopicName: discourse-blue-green-update-pipeline-notification
+          Subscription:
+            -
+              Endpoint: !Ref NotificationMail
+              Protocol: "email"
+
+  PipelineNotificationTopicPolicy:
+    Type: AWS::SNS::TopicPolicy
+    Properties:
+      PolicyDocument:
+        Id: AllowCloudwatchEventsToPublish
+        Version: '2012-10-17'
+        Statement:
+          -
+            Sid: My-statement-id
+            Effect: Allow
+            Principal:
+              Service: "events.amazonaws.com"
+            Action: sns:Publish
+            Resource: !Ref PipelineNotificationTopic
+      Topics:
+        - !Ref PipelineNotificationTopic
 
   PipelineExecutionRole:
     Type: 'AWS::IAM::Role'
@@ -244,6 +273,14 @@ Resources:
                   - cloudformation:SetStackPolicy
                   - cloudformation:ValidateTemplate
                   - iam:PassRole
+                Effect: Allow
+                Resource: "*"
+        - PolicyName: SnsPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Action:
+                  - sns:Publish
                 Effect: Allow
                 Resource: "*"
 
@@ -365,10 +402,27 @@ Resources:
                   "AMIid": "#{AMIcreation.AMIid}",
                   "EnvironmentVersion": "v#{RDSSnapshot.newversion}"
                 }
-            # {
-            #   "EnvironmentVersion": "v#{RDSSnapshot.newversion}",
-            #   "RDSSnapshotName": "#{RDSSnapshot.snapshotDNname}"
-            # }
             InputArtifacts:
             - Name: SourceZip
             RunOrder: 5
+        -
+            Name: Manual-testing-waiting
+            Actions:
+            -
+              Name: Approve-New-Version
+              ActionTypeId:
+                Category: Approval
+                Owner: AWS
+                Version: 1
+                Provider: Manual
+              Configuration:
+                NotificationArn: !Ref PipelineNotificationTopic
+                CustomData: !Sub |
+                  Test new discourse environment. Do the following steps:
+                  1. Execute: dig +short v#{RDSSnapshot.newversion}.discourse.${DomainName}
+                  2. Copy one of the ips and open your /etc/hosts file and add this line:
+                    <ip> discourse.${DomainName}
+                  3. Test new version in separate browser.
+
+                  Do you want to proceed with DNS switch to finalize the update?
+              RunOrder: 6
