@@ -1,0 +1,220 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Pipeline to manage blue-green updating
+
+Parameters:
+  Customer:
+    Type: String
+  ProjectName:
+    Type: String
+  GitHubUsername:
+    Type: String
+  GitHubToken:
+    Type: String
+  GitHubRepoName:
+    Type: String
+  BucketName:
+    Type: String
+  CodeBuildComputeType:
+    Type: String
+  CodeBuildEnvironment:
+    Type: String
+
+Resources:
+  CloudFormationRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub ${ProjectName}-cloudformation-role
+      Path: '/'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        -
+          Action: 'sts:AssumeRole'
+          Effect: Allow
+          Principal:
+            Service:
+            - cloudformation.amazonaws.com
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AdministratorAccess
+  
+  #############
+  # Codebuild #
+  #############
+  CodeBuildServiceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub ${ProjectName}-codebuild-role
+      Path: '/managed/BuildCloudformationRole/'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          -
+            Action: 'sts:AssumeRole'
+            Effect: Allow
+            Principal:
+              Service:
+                - codebuild.amazonaws.com
+      Policies:
+        -
+          PolicyName: BuildCloudformationPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+            -
+              Sid: "CodeBuildToCWL"
+              Effect: Allow
+              Action:
+                - 'logs:CreateLogGroup'
+                - 'logs:CreateLogStream'
+                - 'logs:PutLogEvents'
+              Resource:
+                - !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/codebuild/*'
+        - 
+          PolicyName: CodeBuildS3ArtifactAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Action:
+                  - 's3:GetObject'
+                  - 's3:GetObjectVersion'
+                  - 's3:GetBucketVersioning'
+                  - 's3:PutObject'
+                Effect: Allow
+                Resource:
+                  - !Sub arn:aws:s3:::${BucketName}
+                  - !Sub arn:aws:s3:::${BucketName}/*
+        - 
+          PolicyName: RDSaccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Action:
+                  - 'rds:Describe*'
+                  - 'rds:CreateDBSnapshot'
+                Effect: Allow
+                Resource:
+                  - '*'
+
+  CodeBuildCreateSnapshot:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Name: !Sub ${ProjectName}-restore-db
+      Artifacts:
+        Type: CODEPIPELINE
+      Environment:
+        Type: LINUX_CONTAINER
+        ComputeType: !Ref CodeBuildComputeType
+        Image: !Sub '${CodeBuildEnvironment}'
+        EnvironmentVariables:
+          - Name: PROJECT
+            Value: discourse
+      ServiceRole: !GetAtt CodeBuildServiceRole.Arn
+      Source:
+        Type: CODEPIPELINE
+        BuildSpec: 
+          !Sub |
+            version: 0.2
+            phases:
+              install:
+                commands:
+                  - # keep empty
+              build:
+                commands:
+                  - aws rds describe-db-instances --region ${AWS::Region} --query 'DBInstances[*].DBInstanceIdentifier' | grep discourse | tr -d ' ",discourse\-v' | sort -Vr | head -n 1
+                  - latestDBversion=`aws rds describe-db-instances --region ${AWS::Region} --query 'DBInstances[*].DBInstanceIdentifier' | grep discourse | tr -d ' ",discourse\-v' | sort -Vr | head -n 1`
+                  - snapshotDNname="discourse-version-$latestDBversion-day-`date +%Y%m%d`"
+                  - echo "Latest version of discourse db is $latestDBversion. Start creating snapshot $snapshotDNname"
+                  - aws rds create-db-snapshot --region ${AWS::Region} --db-instance-identifier discourse-v$latestDBversion --db-snapshot-identifier $snapshotDNname
+                  - aws rds wait db-snapshot-completed --region ${AWS::Region} --db-snapshot-identifier $snapshotDNname
+
+  PipelineExecutionRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      Path: /managed/
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Action: 'sts:AssumeRole'
+            Effect: Allow
+            Principal:
+              Service:
+                - codepipeline.amazonaws.com
+      Policies:
+        - PolicyName: CodePipelinePassRoleAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Action: 'iam:PassRole'
+                Effect: Allow
+                Resource: !GetAtt CodeBuildServiceRole.Arn
+        - PolicyName: CodePipelineBuildAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Action:
+                  - 'codebuild:StartBuild'
+                  - 'codebuild:StopBuild'
+                  - 'codebuild:BatchGetBuilds'
+                Effect: Allow
+                Resource:
+                  - !GetAtt CodeBuildCreateSnapshot.Arn
+        - PolicyName: CodePipelineS3ArtifactAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Action:
+                  - 's3:GetObject'
+                  - 's3:GetObjectVersion'
+                  - 's3:GetBucketVersioning'
+                  - 's3:PutObject'
+                Effect: Allow
+                Resource:
+                  - !Sub arn:aws:s3:::${BucketName}
+                  - !Sub arn:aws:s3:::${BucketName}/*
+
+
+  Pipeline:
+    Type: AWS::CodePipeline::Pipeline
+    Properties:
+      ArtifactStore:
+        Location: !Ref BucketName
+        Type: S3
+      Name: DiscourseBlueGreenUpdate
+      RoleArn: !GetAtt PipelineExecutionRole.Arn
+      Stages:
+        -
+          Name: Source
+          Actions:
+          -
+            Name: Repository
+            ActionTypeId:
+              Category: Source
+              Owner: ThirdParty
+              Provider: GitHub
+              Version: 1
+            Configuration:
+              Owner: !Ref GitHubUsername
+              Repo: !Ref GitHubRepoName
+              Branch: master
+              OAuthToken: !Ref GitHubToken
+            OutputArtifacts:
+            - Name: SourceZip
+            RunOrder: 1
+        -
+          Name: RDSSnapshot
+          Actions:
+          -
+            Name: RDSSnapshot
+            Namespace: RDSSnapshot
+            ActionTypeId:
+              Category: Build
+              Owner: AWS
+              Provider: CodeBuild
+              Version: 1
+            Configuration:
+              ProjectName: !Ref CodeBuildCreateSnapshot
+            InputArtifacts:
+            - Name: SourceZip
+            OutputArtifacts:
+            - Name: RDSsnapshotOutput
+            RunOrder: 2
