@@ -434,10 +434,34 @@ Resources:
                 NotificationArn: !Ref PipelineNotificationTopic
                 CustomData: !Sub |
                   Test new discourse environment. Do the following steps:
-                  1. Execute: dig +short v#{RDSSnapshot.newversion}.discourse.${DomainName}
+                  1. Execute: dig +short v#{VersionParameterStack.newversion}.${ApplicationName}.${DomainName}
                   2. Copy one of the ips and open your /etc/hosts file and add this line:
-                    <ip> discourse.${DomainName}
+                    <ip> ${ApplicationName}.${DomainName}
                   3. Test new version in separate browser.
 
                   Do you want to proceed with DNS switch to finalize the update?
               RunOrder: 6
+        -
+            Name: Switch-DNS-to-new-version
+            Actions:
+            -
+              Name: SwitchDNS
+              Namespace: SwitchDNS
+              ActionTypeId:
+                Category: Deploy
+                Owner: AWS
+                Provider: CloudFormation
+                Version: 1
+              Configuration:
+                ActionMode: CREATE_UPDATE
+                StackName: !Sub discourse-application-tier-v#{VersionParameterStack.newversion}
+                Capabilities: CAPABILITY_NAMED_IAM
+                RoleArn: !GetAtt CloudFormationRole.Arn
+                TemplatePath: SourceZip::cloudformation/application-tier.yml
+                ParameterOverrides: !Sub |
+                  {
+                    "NewLoadBalancerDNS": "v#{VersionParameterStack.newversion}.${ApplicationName}.${DomainName}"
+                  }
+              InputArtifacts:
+              - Name: SourceZip
+              RunOrder: 7
