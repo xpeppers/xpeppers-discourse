@@ -1,0 +1,75 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'S3 Bucket'
+Parameters:
+
+  ApplicationName:
+    Default: discourse-common-ApplicationName
+    Type: AWS::SSM::Parameter::Value<String>
+  DomainName:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: discourse-common-DomainName
+  NewLoadBalancerDNS:
+    Type: String
+
+Mappings:
+  HostedZoneMapID:
+    us-gov-east-1:
+      "HostedZoneID": "Z166TLBEWOO7G0"
+    us-gov-west-1:
+      "HostedZoneID": "Z33AYJ8TM3BH4J"
+    us-east-2:
+      "HostedZoneID": "Z3AADJGX6KTTL2"
+    us-east-1:
+      "HostedZoneID": "Z35SXDOTRQ7X7K"
+    us-west-1:
+      "HostedZoneID": "Z368ELLRRE2KJ0"
+    us-west-2:
+      "HostedZoneID": "Z1H1FL5HABSF5"
+    af-south-1:
+      "HostedZoneID": "Z268VQBMOI5EKX"
+    ap-east-1:
+      "HostedZoneID": "Z3DQVH9N71FHZ0"
+    ap-south-1:
+      "HostedZoneID": "ZP97RAFLXTNZK"
+    ap-northeast-3:
+      "HostedZoneID": "Z5LXEXXYW11ES"
+    ap-northeast-2:
+      "HostedZoneID": "ZWKZPGTI48KDX"
+    ap-southeast-1:
+      "HostedZoneID": "Z1LMS91P8CMLE"
+    ap-southeast-2:
+      "HostedZoneID": "Z1GM3OXH4ZPM65"
+    ap-northeast-1:
+      "HostedZoneID": "Z14GRHDCWA56QT"
+    ca-central-1:
+      "HostedZoneID": "ZQSVJUPU6J1EY"
+    cn-north-1:
+      "HostedZoneID": "Z1GDH35T77C1KE"
+    cn-northwest-1:
+      "HostedZoneID": "ZM7IZAIOVVDZF"
+    eu-central-1:
+      "HostedZoneID": "Z215JYRZR1TBD5"
+    eu-west-1:
+      "HostedZoneID": "Z32O12XQLNTSW2"
+    eu-west-2:
+      "HostedZoneID": "ZHURV8PSTC4K8"
+    eu-west-3:
+      "HostedZoneID": "Z3Q77PNBQS71R4"
+    eu-north-1:
+      "HostedZoneID": "Z23TAZ6LKFMNIO"
+    me-south-1:
+      "HostedZoneID": "ZS929ML54UICD"
+    sa-east-1:
+      "HostedZoneID": "Z2P70J7HTTTPLU"
+
+Resurces:
+  discourseDNS:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneName: !Sub ${DomainName}.
+      Name: !Sub ${ApplicationName}test.${DomainName}
+      Type: A
+      AliasTarget:
+        DNSName: !Ref NewLoadBalancerDNS
+        HostedZoneId: !FindInMap [HostedZoneMapID, !Ref "AWS::Region", "HostedZoneID"]
