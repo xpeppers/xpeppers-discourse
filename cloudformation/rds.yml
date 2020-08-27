@@ -3,32 +3,41 @@ AWSTemplateFormatVersion: '2010-09-09'
 Description: Postgres RDS for discourse
 Parameters:
   VpcId:
-    Type: String
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: discourse-common-VpcId
   SubnetIdA:
-    Type: String
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: discourse-common-SubnetIdA
   SubnetIdB:
-    Type: String
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: discourse-common-SubnetIdB
   DBInstanceType:
     Description: RDS database instance
-    Type: String
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: discourse-rds-DBInstanceType
   DBPassword:
     Description: Password for database
-    Type: String
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: discourse-rds-DBPassword
     NoEcho: true
   RDSSnapshotName:
     Description: Name of the RDS snapshot from which create RDS
-    Type: String
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: discourse-rds-RDSSnapshotName
   PostgresEngineVersion:
-    Type: String
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: discourse-rds-PostgresEngineVersion
     Description: Version of the postgres server engine
-    Default: "11.1"
   VPCcidr:
     Description: CIDR of the VPC
-    Type: String
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: discourse-common-VPCcidr
   ApplicationName:
-    Type: String
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: discourse-common-ApplicationName
   EnvironmentVersion:
-    Type: String
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: discourse-common-EnvironmentVersion
 
 Conditions:
   HasSnapshot:
