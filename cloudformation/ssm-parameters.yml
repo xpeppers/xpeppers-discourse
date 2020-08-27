@@ -2,6 +2,108 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Description: SSM Parameters for discourse deployment
 
+Parameters:
+  pDiscourseCommonCustomer:
+    Type: String
+    Default: "default"
+    Description: Name of customer or company
+  pDiscourseCommonDomainName:
+    Type: String
+    Default: "default"
+    Description: Domain name == route53 hosted zone name
+  pDiscourseCommonApplicationName:
+    Type: String
+    Default: "discourse"
+    Description: Name of application. It should be discourse
+  pDiscourseCommonEnvironmentVersion:
+    Type: String
+    Default: "v0"
+    Description: Version number. It is always override by pipeline
+  pDiscourseCommonSubnetIdA:
+    Type: String
+    Default: "default"
+    Description: Subnet-A to use for application
+  pDiscourseCommonSubnetIdB:
+    Type: String
+    Default: "default"
+    Description: Subnet-B to use for application
+  pDiscourseCommonVPCcidr:
+    Type: String
+    Default: "default"
+    Description: VPC CIDR
+  pDiscourseCommonVpcId:
+    Type: String
+    Default: "default"
+    Description: VPC id to use for application
+  pDiscourseRdsDBInstanceType:
+    Type: String
+    Default: "default"
+    Description: RDS instance type for postgres
+  pDiscourseRdsDBPassword:
+    Type: String
+    Default: "default"
+    Description: Default password for postgres. Ignored if db is restored from snapshot
+  pDiscourseRdsPostgresEngineVersion:
+    Type: String
+    Default: "11.1"
+    Description: Postgres version of database
+  pDiscourseRdsRDSSnapshotName:
+    Type: String
+    Default: "default"
+    Description: Name of the snapshot from which recover db. Leave it empty if new database
+  pDiscourseAppAMIid:
+    Type: String
+    Default: "default"
+    Description: Golden AMI id. It is always override by pipeline
+  pDiscourseAppCertificateARN:
+    Type: String
+    Default: "default"
+    Description: ARN of load balancer certificate
+  pDiscourseAppInstanceName:
+    Type: String
+    Default: "discourse"
+    Description: Name of the EC2 instance
+  pDiscourseAppInstanceType:
+    Type: String
+    Default: "default"
+    Description: EC2 type
+  pDiscourseAppKeyName:
+    Type: String
+    Default: "default"
+    Description: Keyname for EC2
+  pDiscourseAppSshCidrAllow:
+    Type: String
+    Default: "default"
+    Description: CIDR of allowed IPs for ssh connection to instance
+  pDiscoursePipelineBucketName:
+    Type: String
+    Default: "default"
+    Description: Name of S3 bucket where pipeline store artifacts
+  pDiscoursePipelineCodeBuildComputeType:
+    Type: String
+    Default: "default"
+    Description: Codebuild size type
+  pDiscoursePipelineCodeBuildEnvironment:
+    Type: String
+    Default: "default"
+    Description: Codebuild container name
+  pDiscoursePipelineGitHubRepoName:
+    Type: String
+    Default: "default"
+    Description: Name of github repo from which get the code
+  pDiscoursePipelineGitHubToken:
+    Type: String
+    Default: "default"
+    Description: Token for reading github repository
+  pDiscoursePipelineGitHubUsername:
+    Type: String
+    Default: "xpeppers"
+    Description: Username or organization name of repository owner
+  pDiscoursePipelineNotificationMail:
+    Type: String
+    Default: "xpeppers-discourse"
+    Description: Mail to send pipeline notification
+
 Resources:
 
 #common
@@ -11,7 +113,7 @@ Resources:
       Name: discourse-common-Customer
       Type: String
       Description: Name of customer or company
-      Value: "default"
+      Value: !Ref pDiscourseCommonCustomer
 
   DiscourseCommonDomainName:
     Type: AWS::SSM::Parameter
@@ -19,7 +121,7 @@ Resources:
       Name: discourse-common-DomainName
       Type: String
       Description: Domain name == route53 hosted zone name
-      Value: "default"
+      Value: !Ref pDiscourseCommonDomainName
 
   DiscourseCommonApplicationName:
     Type: AWS::SSM::Parameter
@@ -27,7 +129,7 @@ Resources:
       Name: discourse-common-ApplicationName
       Type: String
       Description: Name of application. It should be discourse
-      Value: "default"
+      Value: !Ref pDiscourseCommonApplicationName
 
   DiscourseCommonEnvironmentVersion:
     Type: AWS::SSM::Parameter
@@ -35,7 +137,7 @@ Resources:
       Name: discourse-common-EnvironmentVersion
       Type: String
       Description: Version number. It is always override by pipeline
-      Value: "default"
+      Value: !Ref pDiscourseCommonEnvironmentVersion
 
 # network
   DiscourseCommonSubnetIdA:
@@ -44,7 +146,7 @@ Resources:
       Name: discourse-common-SubnetIdA
       Type: String
       Description: Subnet-A to use for application
-      Value: "default"
+      Value: !Ref pDiscourseCommonSubnetIdA
 
   DiscourseCommonSubnetIdB:
     Type: AWS::SSM::Parameter
@@ -52,7 +154,7 @@ Resources:
       Name: discourse-common-SubnetIdB
       Type: String
       Description: Subnet-B to use for application
-      Value: "default"
+      Value: !Ref pDiscourseCommonSubnetIdB
 
   DiscourseCommonVPCcidr:
     Type: AWS::SSM::Parameter
@@ -60,7 +162,7 @@ Resources:
       Name: discourse-common-VPCcidr
       Type: String
       Description: VPC CIDR
-      Value: "default"
+      Value: !Ref pDiscourseCommonVPCcidr
 
   DiscourseCommonVpcId:
     Type: AWS::SSM::Parameter
@@ -68,7 +170,7 @@ Resources:
       Name: discourse-common-VpcId
       Type: String
       Description: VPC id to use for application
-      Value: "default"
+      Value: !Ref pDiscourseCommonVpcId
 
 
 #rds
@@ -78,7 +180,7 @@ Resources:
       Name: discourse-rds-DBInstanceType
       Type: String
       Description: RDS instance type for postgres
-      Value: "default"
+      Value: !Ref pDiscourseRdsDBInstanceType
 
   DiscourseRdsDBPassword:
     Type: AWS::SSM::Parameter
@@ -86,7 +188,7 @@ Resources:
       Name: discourse-rds-DBPassword
       Type: String
       Description: Default password for postgres. Ignored if db is restored from snapshot
-      Value: "default"
+      Value: !Ref pDiscourseRdsDBPassword
 
   DiscourseRdsPostgresEngineVersion:
     Type: AWS::SSM::Parameter
@@ -94,7 +196,7 @@ Resources:
       Name: discourse-rds-PostgresEngineVersion
       Type: String
       Description: Postgres version of database
-      Value: "default"
+      Value: !Ref pDiscourseRdsPostgresEngineVersion
 
   DiscourseRdsRDSSnapshotName:
     Type: AWS::SSM::Parameter
@@ -102,7 +204,7 @@ Resources:
       Name: discourse-rds-RDSSnapshotName
       Type: String
       Description: Name of the snapshot from which recover db. Leave it empty if new database
-      Value: "default"
+      Value: !Ref pDiscourseRdsRDSSnapshotName
 
 
 #application
@@ -112,7 +214,7 @@ Resources:
       Name: discourse-app-AMIid
       Type: String
       Description: Golden AMI id. It is always override by pipeline
-      Value: "default"
+      Value: !Ref pDiscourseAppAMIid
 
   DiscourseAppCertificateARN:
     Type: AWS::SSM::Parameter
@@ -120,7 +222,7 @@ Resources:
       Name: discourse-app-CertificateARN
       Type: String
       Description: ARN of load balancer certificate
-      Value: "default"
+      Value: !Ref pDiscourseAppCertificateARN
 
   DiscourseAppInstanceName:
     Type: AWS::SSM::Parameter
@@ -128,7 +230,7 @@ Resources:
       Name: discourse-app-InstanceName
       Type: String
       Description: Name of the EC2 instance
-      Value: "default"
+      Value: !Ref pDiscourseAppInstanceName
 
   DiscourseAppInstanceType:
     Type: AWS::SSM::Parameter
@@ -136,7 +238,7 @@ Resources:
       Name: discourse-app-InstanceType
       Type: String
       Description: EC2 type
-      Value: "default"
+      Value: !Ref pDiscourseAppInstanceType
 
   DiscourseAppKeyName:
     Type: AWS::SSM::Parameter
@@ -144,7 +246,7 @@ Resources:
       Name: discourse-app-KeyName
       Type: String
       Description: Keyname for EC2
-      Value: "default"
+      Value: !Ref pDiscourseAppKeyName
 
   DiscourseAppSshCidrAllow:
     Type: AWS::SSM::Parameter
@@ -152,7 +254,7 @@ Resources:
       Name: discourse-app-SshCidrAllow
       Type: String
       Description: CIDR of allowed IPs for ssh connection to instance
-      Value: "default"
+      Value: !Ref pDiscourseAppSshCidrAllow
 
 
 #pipeline
@@ -162,7 +264,7 @@ Resources:
       Name: discourse-pipeline-BucketName
       Type: String
       Description: Name of S3 bucket where pipeline store artifacts
-      Value: "default"
+      Value: !Ref pDiscoursePipelineBucketName
 
   DiscoursePipelineCodeBuildComputeType:
     Type: AWS::SSM::Parameter
@@ -170,7 +272,7 @@ Resources:
       Name: discourse-pipeline-CodeBuildComputeType
       Type: String
       Description: Codebuild size type
-      Value: "default"
+      Value: !Ref pDiscoursePipelineCodeBuildComputeType
 
   DiscoursePipelineCodeBuildEnvironment:
     Type: AWS::SSM::Parameter
@@ -178,7 +280,7 @@ Resources:
       Name: discourse-pipeline-CodeBuildEnvironment
       Type: String
       Description: Codebuild container name
-      Value: "default"
+      Value: !Ref pDiscoursePipelineCodeBuildEnvironment
 
   DiscoursePipelineGitHubRepoName:
     Type: AWS::SSM::Parameter
@@ -186,7 +288,7 @@ Resources:
       Name: discourse-pipeline-GitHubRepoName
       Type: String
       Description: Name of github repo from which get the code
-      Value: "default"
+      Value: !Ref pDiscoursePipelineGitHubRepoName
 
   DiscoursePipelineGitHubToken:
     Type: AWS::SSM::Parameter
@@ -194,7 +296,7 @@ Resources:
       Name: discourse-pipeline-GitHubToken
       Type: String
       Description: Token for reading github repository
-      Value: "default"
+      Value: !Ref pDiscoursePipelineGitHubToken
 
   DiscoursePipelineGitHubUsername:
     Type: AWS::SSM::Parameter
@@ -202,7 +304,7 @@ Resources:
       Name: discourse-pipeline-GitHubUsername
       Type: String
       Description: Username or organization name of repository owner
-      Value: "default"
+      Value: !Ref pDiscoursePipelineGitHubUsername
 
   DiscoursePipelineNotificationMail:
     Type: AWS::SSM::Parameter
@@ -210,4 +312,4 @@ Resources:
       Name: discourse-pipeline-NotificationMail
       Type: String
       Description: Mail to send pipeline notification
-      Value: "default"
+      Value: !Ref pDiscoursePipelineNotificationMail
