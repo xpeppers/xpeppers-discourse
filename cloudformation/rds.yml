@@ -67,6 +67,7 @@ Resources:
         CidrIp: !Ref VPCcidr
   PostgresRDS:
     Type: "AWS::RDS::DBInstance"
+    DeletionPolicy: Snapshot
     Properties:
       DBSnapshotIdentifier: !If [ HasSnapshot, !Ref RDSSnapshotName, !Ref "AWS::NoValue"]
       DBInstanceIdentifier: !Sub ${ApplicationName}-${EnvironmentVersion}
