@@ -1,0 +1,213 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: SSM Parameters for discourse deployment
+
+Resources:
+
+#common
+  DiscourseCommonCustomer:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: discourse-common-Customer
+      Type: String
+      Description: Name of customer or company
+      Value: "default"
+
+  DiscourseCommonDomainName:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: discourse-common-DomainName
+      Type: String
+      Description: Domain name == route53 hosted zone name
+      Value: "default"
+
+  DiscourseCommonApplicationName:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: discourse-common-ApplicationName
+      Type: String
+      Description: Name of application. It should be discourse
+      Value: "default"
+
+  DiscourseCommonEnvironmentVersion:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: discourse-common-EnvironmentVersion
+      Type: String
+      Description: Version number. It is always override by pipeline
+      Value: "default"
+
+# network
+  DiscourseCommonSubnetIdA:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: discourse-common-SubnetIdA
+      Type: String
+      Description: Subnet-A to use for application
+      Value: "default"
+
+  DiscourseCommonSubnetIdB:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: discourse-common-SubnetIdB
+      Type: String
+      Description: Subnet-B to use for application
+      Value: "default"
+
+  DiscourseCommonVPCcidr:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: discourse-common-VPCcidr
+      Type: String
+      Description: VPC CIDR
+      Value: "default"
+
+  DiscourseCommonVpcId:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: discourse-common-VpcId
+      Type: String
+      Description: VPC id to use for application
+      Value: "default"
+
+
+#rds
+  DiscourseRdsDBInstanceType:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: discourse-rds-DBInstanceType
+      Type: String
+      Description: RDS instance type for postgres
+      Value: "default"
+
+  DiscourseRdsDBPassword:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: discourse-rds-DBPassword
+      Type: String
+      Description: Default password for postgres. Ignored if db is restored from snapshot
+      Value: "default"
+
+  DiscourseRdsPostgresEngineVersion:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: discourse-rds-PostgresEngineVersion
+      Type: String
+      Description: Postgres version of database
+      Value: "default"
+
+  DiscourseRdsRDSSnapshotName:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: discourse-rds-RDSSnapshotName
+      Type: String
+      Description: Name of the snapshot from which recover db. Leave it empty if new database
+      Value: "default"
+
+
+#application
+  DiscourseAppAMIid:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: discourse-app-AMIid
+      Type: String
+      Description: Golden AMI id. It is always override by pipeline
+      Value: "default"
+
+  DiscourseAppCertificateARN:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: discourse-app-CertificateARN
+      Type: String
+      Description: ARN of load balancer certificate
+      Value: "default"
+
+  DiscourseAppInstanceName:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: discourse-app-InstanceName
+      Type: String
+      Description: Name of the EC2 instance
+      Value: "default"
+
+  DiscourseAppInstanceType:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: discourse-app-InstanceType
+      Type: String
+      Description: EC2 type
+      Value: "default"
+
+  DiscourseAppKeyName:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: discourse-app-KeyName
+      Type: String
+      Description: Keyname for EC2
+      Value: "default"
+
+  DiscourseAppSshCidrAllow:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: discourse-app-SshCidrAllow
+      Type: String
+      Description: CIDR of allowed IPs for ssh connection to instance
+      Value: "default"
+
+
+#pipeline
+  DiscoursePipelineBucketName:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: discourse-pipeline-BucketName
+      Type: String
+      Description: Name of S3 bucket where pipeline store artifacts
+      Value: "default"
+
+  DiscoursePipelineCodeBuildComputeType:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: discourse-pipeline-CodeBuildComputeType
+      Type: String
+      Description: Codebuild size type
+      Value: "default"
+
+  DiscoursePipelineCodeBuildEnvironment:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: discourse-pipeline-CodeBuildEnvironment
+      Type: String
+      Description: Codebuild container name
+      Value: "default"
+
+  DiscoursePipelineGitHubRepoName:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: discourse-pipeline-GitHubRepoName
+      Type: String
+      Description: Name of github repo from which get the code
+      Value: "default"
+
+  DiscoursePipelineGitHubToken:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: discourse-pipeline-GitHubToken
+      Type: String
+      Description: Token for reading github repository
+      Value: "default"
+
+  DiscoursePipelineGitHubUsername:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: discourse-pipeline-GitHubUsername
+      Type: String
+      Description: Username or organization name of repository owner
+      Value: "default"
+
+  DiscoursePipelineNotificationMail:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: discourse-pipeline-NotificationMail
+      Type: String
+      Description: Mail to send pipeline notification
+      Value: "default"
