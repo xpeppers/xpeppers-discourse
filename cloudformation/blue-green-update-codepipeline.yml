@@ -186,6 +186,9 @@ Resources:
                   - AWS_PROFILE=default AWS_MFA=111111 DB_URL=$DBurl ./packer build -color=false -machine-readable packer-silver-image.json | tee build.log
                   - AMIid=`grep 'artifact,0,id' build.log | cut -d, -f6 | cut -d':' -f2`
 
+  ################
+  # Pipeline SNS #
+  ################
   PipelineNotificationTopic:
         Type: "AWS::SNS::Topic"
         Properties:
@@ -211,6 +214,10 @@ Resources:
             Resource: !Ref PipelineNotificationTopic
       Topics:
         - !Ref PipelineNotificationTopic
+
+  #############
+  # Pipeline  #
+  #############
 
   PipelineExecutionRole:
     Type: 'AWS::IAM::Role'
