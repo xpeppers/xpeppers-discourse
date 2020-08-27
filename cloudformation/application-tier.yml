@@ -67,6 +67,10 @@ Parameters:
   EnvironmentVersion:
     Default: v0
     Type: String
+  DomainName:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: discourse-common-DomainName
+  
 Resources:
 
 # Instance profile
@@ -284,8 +288,8 @@ Resources:
   LoadBalancerDNSWithVersion:
     Type: AWS::Route53::RecordSet
     Properties:
-      HostedZoneName: xpeppers.com.
-      Name: !Sub ${EnvironmentVersion}.${ApplicationName}.xpeppers.com.
+      HostedZoneName: !Sub ${DomainName}.
+      Name: !Sub ${EnvironmentVersion}.${ApplicationName}.${DomainName}.
       Type: A
       AliasTarget:
         DNSName:
