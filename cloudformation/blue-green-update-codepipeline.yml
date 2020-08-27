@@ -334,7 +334,7 @@ Resources:
           Actions:
           -
             Name: RDSSnapshot
-            Namespace: RDSSnapshot
+            Namespace: VersionParameterStack
             ActionTypeId:
               Category: Build
               Owner: AWS
@@ -358,14 +358,14 @@ Resources:
               Version: 1
             Configuration:
               ActionMode: CREATE_UPDATE
-              StackName: !Sub discourse-rds-v#{RDSSnapshot.newversion}
+              StackName: !Sub discourse-rds-v#{VersionParameterStack.newversion}
               Capabilities: CAPABILITY_NAMED_IAM
               RoleArn: !GetAtt CloudFormationRole.Arn
               TemplatePath: SourceZip::cloudformation/rds.yml
               ParameterOverrides: !Sub |
                 {
-                  "EnvironmentVersion": "v#{RDSSnapshot.newversion}",
-                  "RDSSnapshotName": "#{RDSSnapshot.snapshotDNname}"
+                  "EnvironmentVersion": "v#{VersionParameterStack.newversion}",
+                  "RDSSnapshotName": "#{VersionParameterStack.snapshotDNname}"
                 }
             InputArtifacts:
             - Name: SourceZip
@@ -389,7 +389,7 @@ Resources:
                 [
                   {
                       "name": "DBurl",
-                      "value": "#{RDSSnapshot.databaseURL}"
+                      "value": "#{VersionParameterStack.databaseURL}"
                   }
                 ]
             InputArtifacts:
@@ -408,14 +408,14 @@ Resources:
               Version: 1
             Configuration:
               ActionMode: CREATE_UPDATE
-              StackName: !Sub discourse-application-tier-v#{RDSSnapshot.newversion}
+              StackName: !Sub discourse-application-tier-v#{VersionParameterStack.newversion}
               Capabilities: CAPABILITY_NAMED_IAM
               RoleArn: !GetAtt CloudFormationRole.Arn
               TemplatePath: SourceZip::cloudformation/application-tier.yml
               ParameterOverrides: !Sub |
                 {
                   "AMIid": "#{AMIcreation.AMIid}",
-                  "EnvironmentVersion": "v#{RDSSnapshot.newversion}"
+                  "EnvironmentVersion": "v#{VersionParameterStack.newversion}"
                 }
             InputArtifacts:
             - Name: SourceZip
