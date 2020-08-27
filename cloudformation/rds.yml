@@ -38,6 +38,9 @@ Parameters:
   EnvironmentVersion:
     Type: String
     Default: v0
+  DomainName:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: discourse-common-DomainName
 
 Conditions:
   HasSnapshot:
@@ -90,9 +93,9 @@ Resources:
   PostgresRDSdns:
     Type: AWS::Route53::RecordSet
     Properties:
-      HostedZoneName: xpeppers.com.
+      HostedZoneName: !Sub ${DomainName}.
       TTL: 300
-      Name: !Sub ${ApplicationName}db-${EnvironmentVersion}.xpeppers.com.
+      Name: !Sub ${ApplicationName}db-${EnvironmentVersion}.${DomainName}.
       Type: CNAME
       ResourceRecords:
         - !GetAtt PostgresRDS.Endpoint.Address
