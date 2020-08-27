@@ -4,7 +4,7 @@ Description: Pipeline to manage blue-green updating
 Parameters:
   Customer:
     Type: String
-  ProjectName:
+  ApplicationName:
     Type: String
   GitHubUsername:
     Type: String
@@ -27,7 +27,7 @@ Resources:
   CloudFormationRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: !Sub ${ProjectName}-cloudformation-role
+      RoleName: !Sub ${ApplicationName}-cloudformation-role
       Path: '/'
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
@@ -47,7 +47,7 @@ Resources:
   CodeBuildServiceRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: !Sub ${ProjectName}-codebuild-role
+      RoleName: !Sub ${ApplicationName}-codebuild-role
       Path: '/managed/BuildCloudformationRole/'
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
@@ -104,7 +104,7 @@ Resources:
   CodeBuildCreateSnapshot:
     Type: AWS::CodeBuild::Project
     Properties:
-      Name: !Sub ${ProjectName}-restore-db
+      Name: !Sub ${ApplicationName}-restore-db
       Artifacts:
         Type: CODEPIPELINE
       Environment:
@@ -144,7 +144,7 @@ Resources:
   CodeBuildPacker:
     Type: AWS::CodeBuild::Project
     Properties:
-      Name: !Sub ${ProjectName}-create-ami
+      Name: !Sub ${ApplicationName}-create-ami
       Artifacts:
         Type: CODEPIPELINE
       Environment:

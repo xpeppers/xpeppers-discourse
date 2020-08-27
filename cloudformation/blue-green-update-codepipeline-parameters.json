@@ -4,7 +4,7 @@
         "ParameterValue": "change-it"
     },
     {
-        "ParameterKey": "ProjectName",
+        "ParameterKey": "ApplicationName",
         "ParameterValue": "discourse"
     },
     {
