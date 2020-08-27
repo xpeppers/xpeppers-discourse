@@ -1,13 +1,13 @@
 {
     "Parameters": {
-    "VpcId": "vpc-0a54db76a27aa0482",
-    "SubnetIdA": "subnet-0dbd90018ad8411ce",
-    "SubnetIdB": "subnet-0ec169587c30647bc",
-    "DBInstanceType": "db.t2.micro",
-    "DBPassword": "ReplaceThisPassword",
-    "RDSSnapshotName": "OverridedByPipeline",
-    "ApplicationName": "discourse",
-    "VPCcidr": "172.16.1.0/24",
-    "EnvironmentVersion": "OverridedByPipeline"
+        "VpcId": "vpc-0a54db76a27aa0482",
+        "SubnetIdA": "subnet-0dbd90018ad8411ce",
+        "SubnetIdB": "subnet-0ec169587c30647bc",
+        "DBInstanceType": "db.t2.micro",
+        "DBPassword": "ReplaceThisPassword",
+        "RDSSnapshotName": "OverridedByPipeline",
+        "ApplicationName": "discourse",
+        "VPCcidr": "172.16.1.0/24",
+        "EnvironmentVersion": "OverridedByPipeline"
     }
-  }
+}
