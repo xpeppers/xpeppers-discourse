@@ -22,8 +22,8 @@ Parameters:
     NoEcho: true
   RDSSnapshotName:
     Description: Name of the RDS snapshot from which create RDS
-    Type: AWS::SSM::Parameter::Value<String>
-    Default: discourse-rds-RDSSnapshotName
+    Type: String
+    Default: ""
   PostgresEngineVersion:
     Type: AWS::SSM::Parameter::Value<String>
     Default: discourse-rds-PostgresEngineVersion
@@ -36,8 +36,8 @@ Parameters:
     Type: AWS::SSM::Parameter::Value<String>
     Default: discourse-common-ApplicationName
   EnvironmentVersion:
-    Type: AWS::SSM::Parameter::Value<String>
-    Default: discourse-common-EnvironmentVersion
+    Type: String
+    Default: v0
 
 Conditions:
   HasSnapshot:

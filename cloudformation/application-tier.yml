@@ -54,10 +54,10 @@ Parameters:
   KeyName:
     Default: discourse-app-KeyName
     Description: The EC2 Key Pair to allow SSH access to the instances
-    Type: AWS::EC2::KeyPair::KeyName
+    Type: AWS::SSM::Parameter::Value<String>
     ConstraintDescription: must be the name of an existing EC2 KeyPair.
   AMIid:
-    Default: discourse-app-AMIid
+    Default: ami-00b73b2150a3aa6bc
     Description: AMI id of silver discourse image
     Type: AWS::EC2::Image::Id
   CertificateARN:
@@ -68,8 +68,8 @@ Parameters:
     Default: discourse-common-ApplicationName
     Type: AWS::SSM::Parameter::Value<String>
   EnvironmentVersion:
-    Default: discourse-common-EnvironmentVersion
-    Type: AWS::SSM::Parameter::Value<String>
+    Default: v0
+    Type: String
 Resources:
 
 # Instance profile
