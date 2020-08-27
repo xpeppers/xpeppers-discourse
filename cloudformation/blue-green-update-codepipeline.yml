@@ -454,10 +454,10 @@ Resources:
                 Version: 1
               Configuration:
                 ActionMode: CREATE_UPDATE
-                StackName: !Sub discourse-application-tier-v#{VersionParameterStack.newversion}
+                StackName: !Sub discourse-dns
                 Capabilities: CAPABILITY_NAMED_IAM
                 RoleArn: !GetAtt CloudFormationRole.Arn
-                TemplatePath: SourceZip::cloudformation/application-tier.yml
+                TemplatePath: SourceZip::cloudformation/dns.yml
                 ParameterOverrides: !Sub |
                   {
                     "NewLoadBalancerDNS": "v#{VersionParameterStack.newversion}.${ApplicationName}.${DomainName}"
