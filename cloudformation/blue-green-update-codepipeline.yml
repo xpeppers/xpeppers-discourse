@@ -362,7 +362,6 @@ Resources:
               Capabilities: CAPABILITY_NAMED_IAM
               RoleArn: !GetAtt CloudFormationRole.Arn
               TemplatePath: SourceZip::cloudformation/rds.yml
-              TemplateConfiguration: !Sub "SourceZip::cloudformation/rds-parameters-cfn.json"
               ParameterOverrides: !Sub |
                 {
                   "EnvironmentVersion": "v#{RDSSnapshot.newversion}",
@@ -413,7 +412,6 @@ Resources:
               Capabilities: CAPABILITY_NAMED_IAM
               RoleArn: !GetAtt CloudFormationRole.Arn
               TemplatePath: SourceZip::cloudformation/application-tier.yml
-              TemplateConfiguration: !Sub "SourceZip::cloudformation/application-tier-parameters-cfn.json"
               ParameterOverrides: !Sub |
                 {
                   "AMIid": "#{AMIcreation.AMIid}",
