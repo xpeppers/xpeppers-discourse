@@ -1,0 +1,102 @@
+[
+    {
+        "ParameterKey": "pDiscourseCommonCustomer",
+        "ParameterValue": ""
+    },
+    {
+        "ParameterKey": "pDiscourseCommonDomainName",
+        "ParameterValue": ""
+    },
+    {
+        "ParameterKey": "pDiscourseCommonApplicationName",
+        "ParameterValue": ""
+    },
+    {
+        "ParameterKey": "pDiscourseCommonEnvironmentVersion",
+        "ParameterValue": ""
+    },
+    {
+        "ParameterKey": "pDiscourseCommonSubnetIdA",
+        "ParameterValue": ""
+    },
+    {
+        "ParameterKey": "pDiscourseCommonSubnetIdB",
+        "ParameterValue": ""
+    },
+    {
+        "ParameterKey": "pDiscourseCommonVPCcidr",
+        "ParameterValue": ""
+    },
+    {
+        "ParameterKey": "pDiscourseCommonVpcId",
+        "ParameterValue": ""
+    },
+    {
+        "ParameterKey": "pDiscourseRdsDBInstanceType",
+        "ParameterValue": ""
+    },
+    {
+        "ParameterKey": "pDiscourseRdsDBPassword",
+        "ParameterValue": ""
+    },
+    {
+        "ParameterKey": "pDiscourseRdsPostgresEngineVersion",
+        "ParameterValue": ""
+    },
+    {
+        "ParameterKey": "pDiscourseRdsRDSSnapshotName",
+        "ParameterValue": ""
+    },
+    {
+        "ParameterKey": "pDiscourseAppAMIid",
+        "ParameterValue": ""
+    },
+    {
+        "ParameterKey": "pDiscourseAppCertificateARN",
+        "ParameterValue": ""
+    },
+    {
+        "ParameterKey": "pDiscourseAppInstanceName",
+        "ParameterValue": ""
+    },
+    {
+        "ParameterKey": "pDiscourseAppInstanceType",
+        "ParameterValue": ""
+    },
+    {
+        "ParameterKey": "pDiscourseAppKeyName",
+        "ParameterValue": ""
+    },
+    {
+        "ParameterKey": "pDiscourseAppSshCidrAllow",
+        "ParameterValue": ""
+    },
+    {
+        "ParameterKey": "pDiscoursePipelineBucketName",
+        "ParameterValue": ""
+    },
+    {
+        "ParameterKey": "pDiscoursePipelineCodeBuildComputeType",
+        "ParameterValue": ""
+    },
+    {
+        "ParameterKey": "pDiscoursePipelineCodeBuildEnvironment",
+        "ParameterValue": ""
+    },
+    {
+        "ParameterKey": "pDiscoursePipelineGitHubRepoName",
+        "ParameterValue": ""
+    },
+    {
+        "ParameterKey": "pDiscoursePipelineGitHubToken",
+        "ParameterValue": ""
+    },
+    {
+        "ParameterKey": "pDiscoursePipelineGitHubUsername",
+        "ParameterValue": ""
+    },
+    {
+        "ParameterKey": "pDiscoursePipelineNotificationMail",
+        "ParameterValue": ""
+    }
+]
