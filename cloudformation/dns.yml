@@ -63,7 +63,7 @@ Mappings:
     sa-east-1:
       "HostedZoneID": "Z2P70J7HTTTPLU"
 
-Resurces:
+Resources:
   discourseDNS:
     Type: AWS::Route53::RecordSet
     Properties:
