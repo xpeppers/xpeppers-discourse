@@ -3,25 +3,35 @@ Description: Pipeline to manage blue-green updating
 
 Parameters:
   Customer:
-    Type: String
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: discourse-common-Customer
   ApplicationName:
-    Type: String
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: discourse-common-ApplicationName
   GitHubUsername:
-    Type: String
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: discourse-pipeline-GitHubUsername
   GitHubToken:
-    Type: String
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: discourse-pipeline-GitHubToken
   GitHubRepoName:
-    Type: String
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: discourse-pipeline-GitHubRepoName
   BucketName:
-    Type: String
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: discourse-pipeline-BucketName
   CodeBuildComputeType:
-    Type: String
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: discourse-pipeline-CodeBuildComputeType
   CodeBuildEnvironment:
-    Type: String
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: discourse-pipeline-CodeBuildEnvironment
   DomainName:
-    Type: String
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: discourse-common-DomainName
   NotificationMail:
-    Type: String
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: discourse-pipeline-NotificationMail
 
 Resources:
   CloudFormationRole:
