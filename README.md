@@ -4,6 +4,7 @@ XPeppers Discourse
 Provisioning [Discourse](https://github.com/discourse/discourse) with packer and AWS
 
 # Deployment on AWS
+Deployment on AWS is managed by cloudformation and all paramters are store on SSM.
 
 ## Prerequisities
 
@@ -11,8 +12,23 @@ Provisioning [Discourse](https://github.com/discourse/discourse) with packer and
 2. Have AWS access key and secret key with proper administrator permissions
 3. [Packer](https://www.packer.io/)
 
+## Cloudformation Template
+Here the cloudformation templates present in _cloudformation_ folder:
+
+* _application-tier.yml_: application load balancer, autoscaling with golden AMI and route53 record set
+* _blue-green-update-codepipeline.yml_: codepipeline and codebuild
+* _rds.yml_: postgres database
+* _vpc.yml_: vpc and all related resources
+* _ssm-parameters.yml_: all ssm parameters used by the other template
+
 ## First installation
-TO DO
+The first 3 steps are necessary only the first time you init the project.
+1. Create an empty RDS with version v0 using the template
+2. Populate file _ssm-parameters-default-value.json_ that creates all parameters used by pipeline.
+3. Create pipeline using _blue-green-update-codepipeline.yml_
+4. Run pipeline
+
+All the next deployment will be managed by codepipeline and the previous step are no more necessary.
 
 ## Blue-Green deployment
 
