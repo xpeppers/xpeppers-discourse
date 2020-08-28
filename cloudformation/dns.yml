@@ -68,7 +68,7 @@ Resources:
     Type: AWS::Route53::RecordSet
     Properties:
       HostedZoneName: !Sub ${DomainName}.
-      Name: !Sub ${ApplicationName}test.${DomainName}
+      Name: !Sub ${ApplicationName}.${DomainName}
       Type: A
       AliasTarget:
         DNSName: !Ref NewLoadBalancerDNS
