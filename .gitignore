@@ -1,3 +1,4 @@
+app.yml
 .vagrant
 discourse_docker/
 playbooks/roles/discourse/files/ssl.crt
