@@ -267,19 +267,14 @@ Resources:
       Name: !Sub ${EnvironmentVersion}.${ApplicationName}.${DomainName}.
       Type: A
       AliasTarget:
-        DNSName:
-          Fn::GetAtt:
-            - DiscourseElasticLoadBalancer
-            - DNSName
-        HostedZoneId:
-          Fn::GetAtt:
-            - DiscourseElasticLoadBalancer
-            - CanonicalHostedZoneID
+        DNSName: !GetAtt DiscourseElasticLoadBalancer.DNSName
+        HostedZoneId: !GetAtt DiscourseElasticLoadBalancer.CanonicalHostedZoneID
 
 Outputs:
   InstanceSecurityGroup:
     Description: Security group ec2
-    Value:
-      Fn::GetAtt:
-      - InstanceSecurityGroup
-      - GroupId
+    Value: !GetAtt InstanceSecurityGroup.GroupId
+  
+  ApplicationLoadBalancerDNS:
+    Description: AWS dns for load balancer
+    Value: !GetAtt DiscourseElasticLoadBalancer.DNSName
