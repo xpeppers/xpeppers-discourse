@@ -123,7 +123,7 @@ Resources:
         Image: !Sub '${CodeBuildEnvironment}'
         EnvironmentVariables:
           - Name: PROJECT
-            Value: discourse
+            Value: !Ref ApplicationName
       ServiceRole: !GetAtt CodeBuildServiceRole.Arn
       Source:
         Type: CODEPIPELINE
@@ -142,13 +142,13 @@ Resources:
                   - # keep empty
               build:
                 commands:
-                  - aws rds describe-db-instances --region ${AWS::Region} --query 'DBInstances[*].DBInstanceIdentifier' | grep discourse | tr -d ' ",discourse\-v' | sort -Vr | head -n 1
-                  - latestDBversion=`aws rds describe-db-instances --region ${AWS::Region} --query 'DBInstances[*].DBInstanceIdentifier' | grep discourse | tr -d ' ",discourse\-v' | sort -Vr | head -n 1`
+                  - aws rds describe-db-instances --region ${AWS::Region} --query 'DBInstances[*].DBInstanceIdentifier' | grep ${ApplicationName} | tr -d ' ",${ApplicationName}\-v' | sort -Vr | head -n 1
+                  - latestDBversion=`aws rds describe-db-instances --region ${AWS::Region} --query 'DBInstances[*].DBInstanceIdentifier' | grep ${ApplicationName} | tr -d ' ",${ApplicationName}\-v' | sort -Vr | head -n 1`
                   - newversion=$((latestDBversion+1))
-                  - databaseURL="discoursedb-v$newversion.${DomainName}."
-                  - snapshotDNname="discourse-version-$latestDBversion-day-`date +%Y%m%d`"
-                  - echo "Latest version of discourse db is $latestDBversion. Start creating snapshot $snapshotDNname"
-                  - aws rds create-db-snapshot --region ${AWS::Region} --db-instance-identifier discourse-v$latestDBversion --db-snapshot-identifier $snapshotDNname
+                  - databaseURL="${ApplicationName}db-v$newversion.${DomainName}."
+                  - snapshotDNname="${ApplicationName}-version-$latestDBversion-day-`date +%Y%m%d`"
+                  - echo "Latest version of ${ApplicationName} db is $latestDBversion. Start creating snapshot $snapshotDNname"
+                  - aws rds create-db-snapshot --region ${AWS::Region} --db-instance-identifier ${ApplicationName}-v$latestDBversion --db-snapshot-identifier $snapshotDNname
                   - aws rds wait db-snapshot-completed --region ${AWS::Region} --db-snapshot-identifier $snapshotDNname
 
   CodeBuildPacker:
@@ -196,7 +196,7 @@ Resources:
                   - mv packer/* .
                   - AWS_PROFILE=default AWS_MFA=111111 DB_URL=$DBurl ./packer build -color=false -machine-readable packer-silver-image.json | tee build.log
                   - AMIid=`grep 'artifact,0,id' build.log | cut -d, -f6 | cut -d':' -f2`
-                  - aws ec2 create-tags --region ${AWS::Region} --resources $AMIid --tags Key=Name,Value="ami-discourse-v$DBurl"
+                  - aws ec2 create-tags --region ${AWS::Region} --resources $AMIid --tags Key=Name,Value="ami-${ApplicationName}-v$DBurl"
 
   ################
   # Pipeline SNS #
@@ -204,7 +204,7 @@ Resources:
   PipelineNotificationTopic:
         Type: "AWS::SNS::Topic"
         Properties:
-          TopicName: discourse-blue-green-update-pipeline-notification
+          TopicName: !Sub ${ApplicationName}-blue-green-update-pipeline-notification
           Subscription:
             -
               Endpoint: !Ref NotificationMail
@@ -309,7 +309,7 @@ Resources:
       ArtifactStore:
         Location: !Ref BucketName
         Type: S3
-      Name: DiscourseBlueGreenUpdate
+      Name: !Sub ${ApplicationName}BlueGreenUpdate
       RoleArn: !GetAtt PipelineExecutionRole.Arn
       Stages:
         -
@@ -360,7 +360,7 @@ Resources:
               Version: 1
             Configuration:
               ActionMode: CREATE_UPDATE
-              StackName: !Sub discourse-rds-v#{VersionParameterStack.newversion}
+              StackName: !Sub ${ApplicationName}-rds-v#{VersionParameterStack.newversion}
               Capabilities: CAPABILITY_NAMED_IAM
               RoleArn: !GetAtt CloudFormationRole.Arn
               TemplatePath: SourceZip::cloudformation/rds.yml
@@ -410,7 +410,7 @@ Resources:
               Version: 1
             Configuration:
               ActionMode: CREATE_UPDATE
-              StackName: !Sub discourse-application-tier-v#{VersionParameterStack.newversion}
+              StackName: !Sub ${ApplicationName}-application-tier-v#{VersionParameterStack.newversion}
               Capabilities: CAPABILITY_NAMED_IAM
               RoleArn: !GetAtt CloudFormationRole.Arn
               TemplatePath: SourceZip::cloudformation/application-tier.yml
@@ -435,7 +435,7 @@ Resources:
               Configuration:
                 NotificationArn: !Ref PipelineNotificationTopic
                 CustomData: !Sub |
-                  Test new discourse environment. Do the following steps:
+                  Test new ${ApplicationName} environment. Do the following steps:
                   1. Execute: dig +short v#{VersionParameterStack.newversion}.${ApplicationName}.${DomainName}
                   2. Copy one of the ips and open your /etc/hosts file and add this line:
                     <ip> ${ApplicationName}.${DomainName}
@@ -456,13 +456,13 @@ Resources:
                 Version: 1
               Configuration:
                 ActionMode: CREATE_UPDATE
-                StackName: !Sub discourse-dns
+                StackName: !Sub ${ApplicationName}-dns
                 Capabilities: CAPABILITY_NAMED_IAM
                 RoleArn: !GetAtt CloudFormationRole.Arn
                 TemplatePath: SourceZip::cloudformation/dns.yml
                 ParameterOverrides: !Sub |
                   {
-                    "NewLoadBalancerDNS": "v#{VersionParameterStack.newversion}.${ApplicationName}.${DomainName}"
+                    "NewLoadBalancerDNS": "#{ApplicationTierStack.ApplicationLoadBalancerDNS}"
                   }
               InputArtifacts:
               - Name: SourceZip
