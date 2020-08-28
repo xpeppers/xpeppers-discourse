@@ -1,0 +1,50 @@
+templates:
+  - "templates/redis.template.yml"
+  - "templates/web.template.yml"
+
+expose:
+  - "80:80"
+
+params:
+  upload_size: 100m
+  db_default_text_search_config: "pg_catalog.english"
+  db_shared_buffers: "256MB"
+  db_work_mem: "10MB"
+
+env:
+  DISCOURSE_DB_USERNAME: <>
+  DISCOURSE_DB_PASSWORD: <>
+  DISCOURSE_DB_HOST: REPLACE_WITH_DB_URL #don't touch this because it's used by sed as placeholder to substitute new db url value
+  DISCOURSE_DB_NAME: <>
+
+  LANG: en_US.UTF-8
+  UNICORN_WORKERS: 2
+
+  DISCOURSE_DEVELOPER_EMAILS: <>
+  DISCOURSE_HOSTNAME: <>
+
+  DISCOURSE_SMTP_ADDRESS: <>
+  DISCOURSE_SMTP_PORT: 587
+  DISCOURSE_SMTP_USER_NAME: <>
+  DISCOURSE_SMTP_PASSWORD: <>
+  DISCOURSE_SMTP_ENABLE_START_TLS: true
+  DISCOURSE_SMTP_AUTHENTICATION: "login"
+
+volumes:
+  - volume:
+      host: /var/discourse/shared/standalone
+      guest: /shared
+  - volume:
+      host: /var/discourse/shared/standalone/log/var-log
+      guest: /var/log
+
+hooks:
+  after_code:
+    - exec:
+        cd: $home/plugins
+        cmd:
+          - mkdir -p plugins
+          - git clone https://github.com/discourse/docker_manager.git
+          - git clone https://github.com/discourse/discourse-tagging.git
+          - git clone https://github.com/cpradio/discourse-plugin-checklist.git
+          - git clone https://github.com/discourse/discourse-plugin-office365-auth.git
