@@ -39,6 +39,10 @@ Parameters:
     Type: String
     Default: "default"
     Description: RDS instance type for postgres
+  pDiscourseRdsDBStorageType:
+    Type: String
+    Default: "default"
+    Description: RDS Storage type for postgres
   pDiscourseRdsDBPassword:
     Type: String
     Default: "default"
@@ -181,6 +185,14 @@ Resources:
       Type: String
       Description: RDS instance type for postgres
       Value: !Ref pDiscourseRdsDBInstanceType
+
+  DiscourseRdsDBStorageType:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: discourse-rds-DBStorageType
+      Type: String
+      Description: RDS Storage type for postgres
+      Value: !Ref pDiscourseRdsDBStorageType
 
   DiscourseRdsDBPassword:
     Type: AWS::SSM::Parameter

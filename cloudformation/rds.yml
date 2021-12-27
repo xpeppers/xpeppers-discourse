@@ -15,6 +15,10 @@ Parameters:
     Description: RDS database instance
     Type: AWS::SSM::Parameter::Value<String>
     Default: discourse-rds-DBInstanceType
+  DBStorageType:
+    Description: RDS database Storage
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: discourse-rds-DBStorageType
   DBPassword:
     Description: Password for database
     Type: AWS::SSM::Parameter::Value<String>
@@ -72,6 +76,7 @@ Resources:
       DBSnapshotIdentifier: !If [ HasSnapshot, !Ref RDSSnapshotName, !Ref "AWS::NoValue"]
       DBInstanceIdentifier: !Sub ${ApplicationName}-${EnvironmentVersion}
       AllocatedStorage: "10"
+      StorageType: !Ref DBStorageType
       DBInstanceClass: !Ref DBInstanceType
       Engine: "postgres"
       EngineVersion: !Ref PostgresEngineVersion

@@ -36,6 +36,10 @@
         "ParameterValue": ""
     },
     {
+        "ParameterKey": "pDiscourseRdsDBStorageType",
+        "ParameterValue": ""
+    },
+    {
         "ParameterKey": "pDiscourseRdsDBPassword",
         "ParameterValue": ""
     },
