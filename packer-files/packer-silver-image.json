@@ -7,6 +7,7 @@
   "builders": [
     {
       "type": "amazon-ebs",
+      "user_data": "#!/bin/sh\necho PubkeyAcceptedKeyTypes=+ssh-rsa >> /etc/ssh/sshd_config; service ssh reload",
       "mfa_code": "{{ user `aws_mfa`}}",
       "profile": "{{ user `aws_profile`}}",
       "region": "eu-west-1",
