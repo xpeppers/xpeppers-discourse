@@ -10,7 +10,7 @@
       "mfa_code": "{{ user `aws_mfa`}}",
       "profile": "{{ user `aws_profile`}}",
       "region": "eu-west-1",
-      "source_ami": "ami-00b73b2150a3aa6bc",
+      "source_ami": "ami-0d75513e7706cf2d9",
       "instance_type": "t3.xlarge",
       "ssh_username": "ubuntu",
       "ami_name": "discourse-{{isotime \"20060102-1504\"}}",
@@ -20,7 +20,7 @@
         {
           "device_name": "/dev/sda1",
           "volume_size": 20,
-          "volume_type": "gp2",
+          "volume_type": "gp3",
           "delete_on_termination": true
         }
       ]
@@ -36,7 +36,7 @@
       "type": "shell",
       "script": "packer-provisioning-script.sh",
       "environment_vars":
-        [ 
+        [
           "DB_URL={{ user `db_url`}}"
         ]
     }

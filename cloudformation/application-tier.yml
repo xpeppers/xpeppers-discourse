@@ -45,7 +45,7 @@ Parameters:
   DomainName:
     Type: AWS::SSM::Parameter::Value<String>
     Default: discourse-common-DomainName
-  
+
 Resources:
 
 # Instance profile
@@ -227,7 +227,7 @@ Resources:
       BlockDeviceMappings:
         - DeviceName: /dev/sda1
           Ebs:
-              VolumeType: gp2
+              VolumeType: gp3
               VolumeSize: 20
 
   InstanceSecurityGroup:
@@ -274,7 +274,7 @@ Outputs:
   InstanceSecurityGroup:
     Description: Security group ec2
     Value: !GetAtt InstanceSecurityGroup.GroupId
-  
+
   ApplicationLoadBalancerDNS:
     Description: AWS dns for load balancer
     Value: !GetAtt DiscourseElasticLoadBalancer.DNSName
