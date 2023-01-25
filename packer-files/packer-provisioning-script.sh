@@ -8,7 +8,6 @@ sudo useradd -G docker discourse
 sudo usermod -aG docker discourse
 
 sudo apt update
-sudo apt upgrade -y
 # Install prerequisities
 sudo apt --yes install git
 

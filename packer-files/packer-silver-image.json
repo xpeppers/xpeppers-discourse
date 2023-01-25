@@ -11,7 +11,7 @@
       "mfa_code": "{{ user `aws_mfa`}}",
       "profile": "{{ user `aws_profile`}}",
       "region": "eu-west-1",
-      "source_ami": "ami-0d75513e7706cf2d9",
+      "source_ami": "ami-0333305f9719618c7",
       "instance_type": "t3.xlarge",
       "ssh_username": "ubuntu",
       "ami_name": "discourse-{{isotime \"20060102-1504\"}}",
